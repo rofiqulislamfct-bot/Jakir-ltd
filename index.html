@@ -40,26 +40,23 @@
                 return saved ? JSON.parse(saved) : null;
             });
 
-            const [authMode, setAuthMode] = React.useState('login'); 
+            const [authType, setAuthType] = React.useState('staff_login'); // 'staff_login', 'owner_login', 'staff_reg', 'owner_reg'
             const [loginPhone, setLoginPhone] = React.useState('');
+            const [loginCode, setLoginCode] = React.useState('');
             const [activeTab, setActiveTab] = React.useState('dashboard');
 
-            // Registration Form State
-            const [regData, setRegData] = React.useState({
-                name: '',
-                phone: '',
-                email: '',
-                role: 'সাধারণ কর্মচারী'
-            });
+            // Form States
+            const [regStaff, setRegStaff] = React.useState({ name: '', phone: '', email: '' });
+            const [regOwner, setRegOwner] = React.useState({ name: '', phone: '', email: '', code: '' });
 
-            // Staff & Salary Database
+            // Staff & Owners Database
             const [staffList, setStaffList] = React.useState(() => {
                 const saved = localStorage.getItem('hanif_staff');
                 return saved ? JSON.parse(saved) : [
-                    { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, status: 'Active' },
-                    { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, status: 'Active' },
-                    { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, status: 'Active' },
-                    { id: 4, name: 'ফ্যাক্টরি ম্যানেজার', role: 'Manager', phone: '01700000004', email: 'manager@jakirltd.com', salary: 25000, snacks: 1500, fine: 0, status: 'Active' }
+                    { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
+                    { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
+                    { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
+                    { id: 4, name: 'ফ্যাক্টরি ম্যানেজার', role: 'Manager', phone: '01700000004', code: '', email: 'manager@jakirltd.com', salary: 25000, snacks: 1500, fine: 0, isOwner: false, status: 'Active' }
                 ];
             });
 
@@ -93,70 +90,107 @@
             const [newProd, setNewProd] = React.useState({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
             const [selectedChallan, setSelectedChallan] = React.useState(null);
 
-            // Handle Login
-            const handleLogin = (e) => {
+            // Handle Staff Login (No code required)
+            const handleStaffLogin = (e) => {
                 e.preventDefault();
                 localStorage.removeItem('hanif_force');
-                
-                const foundStaff = staffList.find(s => s.phone.trim() === loginPhone.trim());
-                if (foundStaff) {
-                    if (foundStaff.status !== 'Active') {
-                        alert('আপনার অ্যাকাউন্টটি এখনও মালিক কর্তৃক কনফার্ম বা অনুমোদন করা হয়নি। দয়া করে মালিকের অনুমোদনের জন্য অপেক্ষা করুন।');
+                const found = staffList.find(s => s.phone.trim() === loginPhone.trim() && !s.isOwner);
+                if (found) {
+                    if (found.status !== 'Active') {
+                        alert('আপনার অ্যাকাউন্টটি এখনও মালিক কর্তৃক কনফার্ম করা হয়নি।');
                         return;
                     }
-
-                    let userObj = { ...foundStaff };
-                    if (foundStaff.role.includes('মালিক') || foundStaff.phone === '01700000001' || foundStaff.phone === '01700000002' || foundStaff.phone === '01700000003') {
-                        userObj.isOwner = true;
-                    } else {
-                        userObj.isOwner = false;
-                    }
-                    setUser(userObj);
-                    localStorage.setItem('hanif_user', JSON.stringify(userObj));
+                    setUser(found);
+                    localStorage.setItem('hanif_user', JSON.stringify(found));
                 } else {
-                    alert('এই নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি! প্রথমে নতুন অ্যাকাউন্ট তৈরি করুন[span_3](start_span)[span_3](end_span)।');
+                    alert('কর্মী বা ম্যানেজারের এই নম্বরটি পাওয়া যায়নি!');
                 }
             };
 
-            // Handle Register (Pending State)
-            const handleRegister = (e) => {
+            // Handle Owner Login (Requires Security Code)
+            const handleOwnerLogin = (e) => {
                 e.preventDefault();
-                if(!regData.phone.startsWith('01') || regData.phone.length !== 11) {
-                    alert('দয়া করে সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 017xxxxxxxx)');
+                localStorage.removeItem('hanif_force');
+                const found = staffList.find(s => s.phone.trim() === loginPhone.trim() && s.isOwner);
+                if (found) {
+                    if (found.code !== loginCode) {
+                        alert('ভুল সিকিউরিটি কোড!');
+                        return;
+                    }
+                    setUser(found);
+                    localStorage.setItem('hanif_user', JSON.stringify(found));
+                } else {
+                    alert('মালিকের এই নম্বরটি রেজিস্টার্ড নয়!');
+                }
+            };
+
+            // Staff Registration (No code needed)
+            const handleStaffRegister = (e) => {
+                e.preventDefault();
+                if(!regStaff.phone.startsWith('01') || regStaff.phone.length !== 11) {
+                    alert('সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন');
                     return;
                 }
-
-                const existing = staffList.find(s => s.phone === regData.phone);
-                if(existing) {
-                    alert('এই মোবাইল নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট বা রেজিস্ট্রেশন রয়েছে[span_4](start_span)[span_4](end_span)!');
+                if(staffList.some(s => s.phone === regStaff.phone)) {
+                    alert('এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট আছে!');
                     return;
                 }
-
-                const newStaffObj = {
+                const newObj = {
                     id: staffList.length + 1,
-                    name: regData.name,
-                    role: regData.role,
-                    phone: regData.phone,
-                    email: regData.email || 'N/A',
+                    name: regStaff.name,
+                    role: 'অনির্ধারিত পদ',
+                    phone: regStaff.phone,
+                    code: '',
+                    email: regStaff.email || 'N/A',
                     salary: 0,
                     snacks: 0,
                     fine: 0,
-                    status: 'Pending' // Owner must confirm this
+                    isOwner: false,
+                    status: 'Pending'
                 };
-
-                setStaffList([...staffList, newStaffObj]);
-                alert('রেজিস্ট্রেশন সফল হয়েছে! মালিক আপনার বেতন, দায়িত্ব ও নাস্তা বিল সেট করে কনফার্ম করার পর আপনি লগইন করতে পারবেন[span_5](start_span)[span_5](end_span)।');
-                setAuthMode('login');
-                setRegData({ name: '', phone: '', email: '', role: 'সাধারণ কর্মচারী' });
+                setStaffList([...staffList, newObj]);
+                alert('রেজিস্ট্রেশন সফল হয়েছে! মালিক আপনার পদ ও বেতন সেট করার পর লগইন করতে পারবেন।');
+                setAuthType('staff_login');
+                setRegStaff({ name: '', phone: '', email: '' });
             };
 
-            const handleLogout = () => {
+            // Owner Registration (Requires Special Security Code)
+            const handleOwnerRegister = (e) => {
+                e.preventDefault();
+                if(!regOwner.phone.startsWith('01') || regOwner.phone.length !== 11) {
+                    alert('সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন');
+                    return;
+                }
+                if(staffList.some(s => s.phone === regOwner.phone)) {
+                    alert('এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট আছে!');
+                    return;
+                }
+                const newOwnerObj = {
+                    id: staffList.length + 1,
+                    name: regOwner.name,
+                    role: 'মালিক (Director)',
+                    phone: regOwner.phone,
+                    code: regOwner.code,
+                    email: regOwner.email || 'N/A',
+                    salary: 0,
+                    snacks: 0,
+                    fine: 0,
+                    isOwner: true,
+                    status: 'Active'
+                };
+                setStaffList([...staffList, newOwnerObj]);
+                alert('মালিকের অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! এখন সিকিউরিটি কোড দিয়ে লগইন করুন।');
+                setAuthType('owner_login');
+                setRegOwner({ name: '', phone: '', email: '', code: '' });
+            };
+
+            const handleлюми = () => {
                 setUser(null);
                 localStorage.removeItem('hanif_user');
             };
 
             const handleMasterLogout = () => {
-                if(confirm('সবার অ্যাকাউন্ট লগআউট করতে চান[span_6](start_span)[span_6](end_span)?')) {
+                if(confirm('সবার অ্যাকাউন্ট লগআউট করতে চান?')) {
                     localStorage.setItem('hanif_force', 'true');
                     localStorage.removeItem('hanif_user');
                     setUser(null);
@@ -165,19 +199,18 @@
 
             const handleForceLogoutSpecific = (staffId) => {
                 setStaffList(staffList.map(s => s.id === staffId ? { ...s, status: 'LoggedOut' } : s));
-                alert('এই কর্মীর সেশন টার্মিনেট করা হয়েছে[span_7](start_span)[span_7](end_span)!');
+                alert('এই কর্মীর সেশন টার্মিনেট করা হয়েছে!');
             };
 
-            // Owner Confirms Staff & Sets Salary, Snacks, Role
             const handleConfirmStaff = (id) => {
                 setStaffList(staffList.map(s => s.id === id ? { ...s, status: 'Active' } : s));
-                alert('কর্মীর অ্যাকাউন্ট কনফার্ম ও সচল করা হয়েছে[span_8](start_span)[span_8](end_span)!');
+                alert('অ্যাকাউন্ট কনফার্ম ও সচল করা হয়েছে!');
             };
 
             const handleUpdateStaffDetails = (id, field, value) => {
                 setStaffList(staffList.map(s => {
                     if(s.id === id) {
-                        return { ...s, [field]: Number(value) };
+                        return { ...s, [field]: field === 'salary' || field === 'snacks' || field === 'fine' ? Number(value) : value };
                     }
                     return s;
                 }));
@@ -201,7 +234,7 @@
                 };
                 setOrders([...orders, orderObj]);
                 setNewOrder({ customer: '', phone: '', address: '', product: 'হানিফ পলিমার ডোর', qty: 1, price: 0, advance: 0 });
-                alert('নতুন মেমো সফলভাবে সংরক্ষিত হয়েছে[span_9](start_span)[span_9](end_span)!');
+                alert('নতুন মেমো সফলভাবে সংরক্ষিত হয়েছে!');
             };
 
             const handlePhotoCapture = (e) => {
@@ -225,274 +258,75 @@
                     photo: newProd.photo
                 }]);
                 setNewProd({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
-                alert('প্রোডাকশন স্টক আপডেট হয়েছে[span_10](start_span)[span_10](end_span)!');
+                alert('প্রোডাকশন স্টক আপডেট হয়েছে!');
             };
 
             if (!user) {
                 return (
                     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
-                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-6">
+                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-5">
                             <div className="text-center">
                                 <h1 className="text-2xl font-bold text-emerald-400">হানিফ ডোর</h1>
                                 <p className="text-sm text-slate-400 mt-1">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
                             </div>
 
-                            <div className="flex bg-slate-800 p-1 rounded-xl text-xs font-semibold">
-                                <button onClick={() => setAuthMode('login')} className={`flex-1 py-2.5 rounded-lg transition ${authMode === 'login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>লগইন করুন</button>
-                                <button onClick={() => setAuthMode('register')} className={`flex-1 py-2.5 rounded-lg transition ${authMode === 'register' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>নতুন অ্যাকাউন্ট তৈরি</button>
+                            {/* Auth Switcher */}
+                            <div className="grid grid-cols-2 gap-1 bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+                                <button onClick={() => setAuthType('staff_login')} className={`py-2 rounded-lg transition ${authType === 'staff_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী লগইন</button>
+                                <button onClick={() => setAuthType('owner_login')} className={`py-2 rounded-lg transition ${authType === 'owner_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক লগইন</button>
+                                <button onClick={() => setAuthType('staff_reg')} className={`py-2 rounded-lg transition ${authType === 'staff_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী রেজিস্ট্রেশন</button>
+                                <button onClick={() => setAuthType('owner_reg')} className={`py-2 rounded-lg transition ${authType === 'owner_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক রেজিস্ট্রেশন</button>
                             </div>
 
-                            {authMode === 'login' ? (
-                                <form onSubmit={handleLogin} className="space-y-4">
+                            {/* 1. Staff Login */}
+                            {authType === 'staff_login' && (
+                                <form onSubmit={handleStaffLogin} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm text-slate-300 mb-2">বাংলাদেশি মোবাইল নম্বর দিন</label>
-                                        <input 
-                                            type="text" 
-                                            required 
-                                            placeholder="যেমন: 01700000001" 
-                                            value={loginPhone} 
-                                            onChange={(e) => setLoginPhone(e.target.value)}
-                                            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-emerald-500 text-center text-lg tracking-widest"
-                                        />
+                                        <label className="block text-sm text-slate-300 mb-1">কর্মী/ম্যানেজার মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="017xxxxxxxx" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
                                     </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">
-                                        প্রবেশ করুন
-                                    </button>
-                                    <p className="text-xs text-slate-500 text-center">
-                                        ডেমো নম্বর: মালিক ১ (`01700000001`), ম্যানেজার (`01700000004`)
-                                    </p>
+                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">প্রবেশ করুন</button>
                                 </form>
-                            ) : (
-                                <form onSubmit={handleRegister} className="space-y-3 text-sm">
+                            )}
+
+                            {/* 2. Owner Login (With Code) */}
+                            {authType === 'owner_login' && (
+                                <form onSubmit={handleOwnerLogin} className="space-y-4">
                                     <div>
-                                        <label className="block text-xs text-slate-400 mb-1">আপনার পূর্ণ নাম</label>
-                                        <input type="text" required placeholder="নাম লিখুন" value={regData.name} onChange={(e) => setRegData({...regData, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <label className="block text-sm text-slate-300 mb-1">মালিকের মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="01700000001" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-slate-400 mb-1">বাংলাদেশি মোবাইল নম্বর</label>
-                                        <input type="text" required placeholder="017xxxxxxxx" value={regData.phone} onChange={(e) => setRegData({...regData, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <label className="block text-sm text-slate-300 mb-1">স্পেশাল সিকিউরিটি কোড</label>
+                                        <input type="password" required placeholder="কোড দিন" value={loginCode} onChange={(e) => setLoginCode(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
+                                    </div>
+                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">মালিক হিসেবে প্রবেশ</button>
+                                    <p className="text-xs text-slate-400 bg-slate-800/60 p-2.5 rounded-lg">ডেমো কোড: জাকির (`01700000001`, কোড: `7771`), হৃদয় (`01700000002`, কোড: `7772`), জীবন (`01700000003`, কোড: `7773`)</p>
+                                </form>
+                            )}
+
+                            {/* 3. Staff Registration */}
+                            {authType === 'staff_reg' && (
+                                <form onSubmit={handleStaffRegister} className="space-y-3 text-sm">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">পূর্ণ নাম</label>
+                                        <input type="text" required placeholder="নাম লিখুন" value={regStaff.name} onChange={(e) => setRegStaff({...regStaff, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="017xxxxxxxx" value={regStaff.phone} onChange={(e) => setRegStaff({...regStaff, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
                                     </div>
                                     <div>
                                         <label className="block text-xs text-slate-400 mb-1">জিমেইল (Gmail)</label>
-                                        <input type="email" placeholder="example@gmail.com" value={regData.email} onChange={(e) => setRegData({...regData, email: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="email" placeholder="example@gmail.com" value={regStaff.email} onChange={(e) => setRegStaff({...regStaff, email: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs text-slate-400 mb-1">পদবি বা দায়িত্ব</label>
-                                        <select value={regData.role} onChange={(e) => setRegData({...regData, role: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white">
-                                            <option value="সাধারণ কর্মচারী">সাধারণ কর্মচারী</option>
-                                            <option value="প্রধান কারিগর">প্রধান কারিগর</option>
-                                            <option value="ড্রাইভার">ড্রাইভার</option>
-                                            <option value="সহকারী ম্যানেজার">সহকারী ম্যানেজার</option>
-                                        </select>
-                                    </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg mt-2">
-                                        রেজিস্ট্রেশন করুন (Pending Approval)
-                                    </button>
+                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg mt-2">কর্মী রেজিস্ট্রেশন (Pending)</button>
                                 </form>
                             )}
-                        </div>
-                    </div>
-                );
-            }
 
-            return (
-                <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-                    <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-50">
-                        <div>
-                            <h1 className="font-bold text-emerald-400">হানিফ ডোর - জাকির লিমিটেড</h1>
-                            <p className="text-xs text-slate-400">ব্যবহারকারী: {user.name} ({user.role})</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {user.isOwner && (
-                                <button onClick={handleMasterLogout} className="bg-amber-600/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
-                                    🔴 সবার লগআউট
-                                </button>
-                            )}
-                            <button onClick={handleLogout} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
-                                লগআউট
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* Navigation Tabs */}
-                    <nav className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-sm">
-                        <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>ড্যাশবোর্ড</button>
-                        <button onClick={() => setActiveTab('profile')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'profile' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>আমার প্রোফাইল ও বেতন</button>
-                        {user.isOwner && (
-                            <button onClick={() => setActiveTab('owner_panel')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'owner_panel' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক নিয়ন্ত্রণ প্যানেল</button>
-                        )}
-                        <button onClick={() => setActiveTab('orders')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'orders' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>মেমো ও চালান</button>
-                        <button onClick={() => setActiveTab('production')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'production' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>প্রোডাকশন ও ক্যামেরা</button>
-                    </nav>
-
-                    <main className="p-4 flex-1 max-w-7xl w-full mx-auto space-y-4">
-                        {activeTab === 'dashboard' && (
-                            <div className="space-y-4">
-                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
-                                    <h2 className="text-lg font-bold text-emerald-400">স্বাগতম, {user.name}</h2>
-                                    <p className="text-sm text-slate-400">আপনার পদবী/দায়িত্ব: <span className="text-white font-semibold">{user.role}</span>[span_11](start_span)[span_11](end_span)</p>
-                                    <p className="text-xs text-emerald-300">সিস্টেমের সমস্ত কার্যক্রম সচল ও সুরক্ষিত রয়েছে[span_12](start_span)[span_12](end_span).</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'profile' && (
-                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4 max-w-xl">
-                                <h2 className="text-lg font-bold text-emerald-400">ব্যক্তিগত প্রোফাইল ও আর্থিক বিবরণী</h2>
-                                <div className="bg-slate-800 p-4 rounded-xl space-y-2 text-sm">
-                                    <p><span className="text-slate-400">নাম:</span> <strong className="text-white">{user.name}</strong></p>
-                                    <p><span className="text-slate-400">পদবি / দায়িত্ব:</span> <strong className="text-emerald-400">{user.role}</strong>[span_13](start_span)[span_13](end_span)</p>
-                                    <p><span className="text-slate-400">মোবাইল নম্বর:</span> <strong className="text-white">{user.phone}</strong></p>
-                                    <p><span className="text-slate-400">জিমেইল (Gmail):</span> <strong className="text-white">{user.email || 'সংযুক্ত নেই'}</strong></p>
-                                    <p><span className="text-slate-400">মূল বেতন:</span> <strong className="text-emerald-400">৳ {user.salary || 0}</strong>[span_14](start_span)[span_14](end_span)</p>
-                                    <p><span className="text-slate-400">নাস্তা / স্ন্যাক্স এলাউন্স:</span> <strong className="text-blue-400">৳ {user.snacks || 0}</strong>[span_15](start_span)[span_15](end_span)</p>
-                                    <p><span className="text-slate-400">জরিমানা / ফাইন (Fine):</span> <strong className="text-red-400">৳ {user.fine || 0}</strong>[span_16](start_span)[span_16](end_span)</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {user.isOwner && activeTab === 'owner_panel' && (
-                            <div className="space-y-6">
-                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4">
-                                    <h2 className="text-lg font-bold text-emerald-400">মালিক নিয়ন্ত্রণ প্যানেল: নতুন একাউন্ট অনুমোদন ও বেতন/নাস্তা সেটআপ</h2>
-                                    <p className="text-xs text-slate-400">নতুন কর্মীরা রেজিস্ট্রেশন করার পর এখানে তালিকা দেখাবে। মালিক বেতন, নাস্তা ও দায়িত্ব সেট করে "কনফার্ম করুন" দিলে তাদের অ্যাকাউন্ট চালু হবে[span_17](start_span)[span_17](end_span)।</p>
-                                    
-                                    <div className="space-y-4 mt-4">
-                                        {staffList.map(st => (
-                                            <div key={st.id} className={`p-4 rounded-xl border space-y-3 text-sm ${st.status === 'Pending' ? 'bg-amber-950/20 border-amber-500/40' : 'bg-slate-800 border-slate-700'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <p className="font-bold text-white text-base">
-                                                            {st.name} <span className="text-xs text-emerald-400 font-normal">({st.role})</span>
-                                                            {st.status === 'Pending' && <span className="ml-2 bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded text-xs border border-amber-500/30">অনুমোদনের অপেক্ষায় (Pending)</span>}
-                                                        </p>
-                                                        <p className="text-xs text-slate-400">ফোন: {st.phone} | ইমেইল: {st.email || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        {st.status === 'Pending' && (
-                                                            <button onClick={() => handleConfirmStaff(st.id)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold">
-                                                                ✓ কনফার্ম করুন (Active)
-                                                            </button>
-                                                        )}
-                                                        <button onClick={() => handleForceLogoutSpecific(st.id)} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs">
-                                                            লগআউট করান[span_18](start_span)[span_18](end_span)
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-700">
-                                                    <div>
-                                                        <label className="block text-xs text-slate-400 mb-1">মূল বেতন (টাকা)[span_19](start_span)[span_19](end_span)</label>
-                                                        <input 
-                                                            type="number" 
-                                                            value={st.salary} 
-                                                            onChange={(e) => handleUpdateStaffDetails(st.id, 'salary', e.target.value)}
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" 
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs text-slate-400 mb-1">নাস্তা / স্ন্যাক্স (টাকা)[span_20](start_span)[span_20](end_span)</label>
-                                                        <input 
-                                                            type="number" 
-                                                            value={st.snacks} 
-                                                            onChange={(e) => handleUpdateStaffDetails(st.id, 'snacks', e.target.value)}
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white" 
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-xs text-slate-400 mb-1">ফাইন / জরিমানা (টাকা)[span_21](start_span)[span_21](end_span)</label>
-                                                        <input 
-                                                            type="number" 
-                                                            value={st.fine} 
-                                                            onChange={(e) => handleUpdateStaffDetails(st.id, 'fine', e.target.value)}
-                                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-red-400" 
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'orders' && (
-                            <div className="space-y-6">
-                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-                                    <h2 className="text-lg font-bold text-emerald-400 mb-4">নতুন মেমো তৈরি করুন</h2>
-                                    <form onSubmit={handleCreateOrder} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                        <input type="text" required placeholder="গ্রাহকের নাম" value={newOrder.customer} onChange={(e) => setNewOrder({...newOrder, customer: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="text" required placeholder="মোবাইল নম্বর" value={newOrder.phone} onChange={(e) => setNewOrder({...newOrder, phone: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="text" required placeholder="ঠিকানা" value={newOrder.address} onChange={(e) => setNewOrder({...newOrder, address: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="text" required placeholder="পণ্যের বিবরণ" value={newOrder.product} onChange={(e) => setNewOrder({...newOrder, product: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="number" required placeholder="পরিমাণ" value={newOrder.qty} onChange={(e) => setNewOrder({...newOrder, qty: Number(e.target.value)})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="number" required placeholder="প্রতি পিস মূল্য" value={newOrder.price} onChange={(e) => setNewOrder({...newOrder, price: Number(e.target.value)})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="number" placeholder="অ্যাডভান্স টাকা" value={newOrder.advance} onChange={(e) => setNewOrder({...newOrder, advance: Number(e.target.value)})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <div className="md:col-span-3 flex justify-end">
-                                            <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-semibold">মেমো সেভ করুন[span_22](start_span)[span_22](end_span)</button>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3">
-                                    <h2 className="text-lg font-bold text-emerald-400">সকল মেমো তালিকা</h2>
-                                    {orders.map(ord => (
-                                        <div key={ord.id} className="bg-slate-800 p-4 rounded-xl flex justify-between items-center text-sm">
-                                            <div>
-                                                <p className="font-bold text-white">{ord.id} - {ord.customer} ({ord.phone})</p>
-                                                <p className="text-xs text-slate-400">পণ্য: {ord.product} x {ord.qty} | বকেয়া: ৳ {ord.due}</p>
-                                            </div>
-                                            <button onClick={() => { setSelectedChallan(ord); setTimeout(() => window.print(), 300); }} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">🖨️ প্রিন্ট চালান[span_23](start_span)[span_23](end_span)</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'production' && (
-                            <div className="space-y-6">
-                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-                                    <h2 className="text-lg font-bold text-emerald-400 mb-4">প্রোডাকশন ও ক্যামেরা এন্ট্রি</h2>
-                                    <form onSubmit={handleAddProduction} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                        <select value={newProd.item} onChange={(e) => setNewProd({...newProd, item: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white">
-                                            <option>হানিফ পলিমার ডোর</option>
-                                            <option>হানিফ সেগুন ডোর</option>
-                                        </select>
-                                        <input type="number" required placeholder="পরিমাণ (পিস)" value={newProd.qty} onChange={(e) => setNewProd({...newProd, qty: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                        <input type="file" accept="image/*" capture="environment" onChange={handlePhotoCapture} className="bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-300 file:bg-emerald-600 file:text-white file:border-0 file:py-1 file:px-3 file:rounded" />
-                                        <div className="md:col-span-3 flex justify-end">
-                                            <button type="submit" className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-semibold">স্টক সেভ করুন[span_24](start_span)[span_24](end_span)</button>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3">
-                                    <h2 className="text-lg font-bold text-emerald-400">স্টক লগ</h2>
-                                    {productionLogs.map(p => (
-                                        <div key={p.id} className="bg-slate-800 p-3 rounded-lg flex items-center gap-4 text-xs">
-                                            {p.photo && <img src={p.photo} className="w-12 h-12 object-cover rounded" />}
-                                            <div>
-                                                <p className="font-bold text-white text-sm">{p.item} - {p.qty} পিস</p>
-                                                <p className="text-slate-400">{p.date}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </main>
-
-                    {selectedChallan && (
-                        <div className="hidden">
-                            <div className="p-8 text-black bg-white">
-                                <h1>হানিফ ডোর চালান - {selectedChallan.id}</h1>
-                                <p>গ্রাহক: {selectedChallan.customer}</p>
-                                <p>মোট: {selectedChallan.total} | বকেয়া: {selectedChallan.due}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-</body>
-</html>
+                            {/* 4. Owner Registration (With Code) */}
+                            {authType === 'owner_reg' && (
+                                <form onSubmit={handleOwnerRegister} className="space-y-3 text-sm">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">মালিকের পূর্ণ নাম</label>
+                                        <input type="text" required placeholder="নাম লিখুন" value={regOwner.name} onChange={(e) => setRegOwner({...regOwner, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-
