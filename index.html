@@ -1,17 +1,181 @@
 <!DOCTYPE html>
 <html lang="bn">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>JAKIR LTD Management System</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAKIR LTD - Business Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-  </head>
-  <body class="bg-slate-950 text-slate-100">
+</head>
+<body class="bg-slate-950 text-slate-100 p-4">
     <div id="root"></div>
-    <script type="text/babel" src="./App.jsx"></script>
-  </body>
+
+    <script type="text/babel">
+        function App() {
+            const [lang, setLang] = React.useState('bn');
+            const [darkMode, setDarkMode] = React.useState(true);
+            const [activeTab, setActiveTab] = React.useState('overview');
+
+            const [employees] = React.useState([
+                { id: 1, name: 'জহির উদ্দিন', role: 'Head Employee', unit: 'হানিফ ডোর', salary: 18000, lates: 1 },
+                { id: 2, name: 'রফিক ইসলাম', role: 'Employee', unit: 'জাকির ইলেকট্রনিকস', salary: 14000, lates: 3 },
+                { id: 3, name: 'শামীম আহাম্মেদ', role: 'Driver', unit: 'লজিস্টিকস', salary: 15000, lates: 0 }
+            ]);
+
+            const [orders] = React.useState([
+                { id: 'MEMO-1001', customer: 'মেসার্স ভাই ভাই এন্টারপ্রাইজ', phone: '01811223344', address: 'ঢাকা রোড, ফেনী', unit: 'হানিফ ডোর' }
+            ]);
+
+            const [inventory] = React.useState([
+                { id: 1, unit: 'হানিফ ডোর', name: 'সেগুন কাঠের পারটেক্স ডোর', stock: 25, buyPrice: 3500, salePrice: 4800 },
+                { id: 2, unit: 'জাকির ইলেকট্রনিকস', name: 'সনি ৪কে টিভি ৪৩ ইঞ্চি', stock: 12, buyPrice: 22500, salePrice: 26500 },
+                { id: 3, unit: 'জাকির ইলেকট্রনিকস', name: 'মিয়াকো স্যান্ডউইচ মেকার', stock: 18, buyPrice: 2200, salePrice: 2900 }
+            ]);
+
+            const [attendanceLogs] = React.useState([
+                { id: 1, name: 'রফিক ইসলাম', time: '09:05 AM', status: 'Late (5m)' }
+            ]);
+
+            const t = {
+                bn: {
+                    appName: 'যাকির লিমিটেড ম্যানেজমেন্ট',
+                    subtitle: 'হানিফ ডোর ও জাকির ইলেকট্রনিক অপারেটিং সিস্টেম',
+                    ownersTitle: '৩ জন সমান মালিক: জাকির হোসেন / রফিকুল ইসলাম হৃদয় / আবু ছাকের জীবন',
+                    overview: 'ওভারভিউ',
+                    inventory: 'ইনভেন্টরি',
+                    employees: 'কর্মচারী',
+                    orders: 'অর্ডার',
+                    attendance: 'উপস্থিতি'
+                },
+                en: {
+                    appName: 'JAKIR LTD Management',
+                    subtitle: 'Hanif Door & Jakir Electronic OS',
+                    ownersTitle: '3 Equal Owners: Zakir Hossain / Rafiqul Islam Hriday / Abu Saker Jiban',
+                    overview: 'Overview',
+                    inventory: 'Inventory',
+                    employees: 'Employees',
+                    orders: 'Orders',
+                    attendance: 'Attendance'
+                }
+            };
+
+            const currentT = t[lang];
+
+            return (
+                <div className={`min-h-screen ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} font-sans p-2`}>
+                    {/* Header */}
+                    <header className={`p-4 rounded-xl mb-4 border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-300'}`}>
+                        <div className="flex justify-between items-center mb-2">
+                            <div>
+                                <h1 className="text-lg font-bold text-emerald-400">{currentT.appName}</h1>
+                                <p className="text-xs text-amber-500">{currentT.subtitle}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')} className="px-2 py-1 text-xs border rounded bg-slate-800 text-slate-200">
+                                    🌐 {lang === 'bn' ? 'EN' : 'বাং'}
+                                </button>
+                                <button onClick={() => setDarkMode(!darkMode)} className="px-2 py-1 text-xs border rounded bg-slate-800 text-yellow-400">
+                                    {darkMode ? '☀️' : '🌙'}
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-amber-400 bg-amber-500/10 p-1.5 rounded text-center border border-amber-500/20">
+                            👑 {currentT.ownersTitle}
+                        </p>
+                    </header>
+
+                    {/* Navigation */}
+                    <nav className="flex overflow-x-auto gap-2 mb-4 scrollbar-none">
+                        {['overview', 'inventory', 'employees', 'orders', 'attendance'].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
+                                    activeTab === tab ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                                }`}
+                            >
+                                {currentT[tab]}
+                            </button>
+                        ))}
+                    </nav>
+
+                    {/* Content */}
+                    <main className="space-y-3">
+                        {activeTab === 'overview' && (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                    <p className="text-xs text-slate-400">মোট ক্যাশ ও স্টক</p>
+                                    <p className="text-lg font-bold text-emerald-400">৳ ৪,৫০,০০০</p>
+                                </div>
+                                <div className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                    <p className="text-xs text-slate-400">সক্রিয় অর্ডার</p>
+                                    <p className="text-lg font-bold text-amber-400">{orders.length} টি</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'inventory' && (
+                            <div className="space-y-2">
+                                {inventory.map(item => (
+                                    <div key={item.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between">
+                                        <div>
+                                            <p className="font-semibold text-sm">{item.name}</p>
+                                            <p className="text-xs text-amber-400">{item.unit} | স্টক: {item.stock} টি</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-bold text-emerald-400">৳ {item.salePrice}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'employees' && (
+                            <div className="space-y-2">
+                                {employees.map(emp => (
+                                    <div key={emp.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between">
+                                        <div>
+                                            <p className="font-semibold text-sm">{emp.name}</p>
+                                            <p className="text-xs text-slate-400">{emp.role} ({emp.unit})</p>
+                                        </div>
+                                        <p className="text-sm font-bold text-emerald-400">৳ {emp.salary}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'orders' && (
+                            <div className="space-y-2">
+                                {orders.map(ord => (
+                                    <div key={ord.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                                        <p className="font-semibold text-sm text-emerald-400">{ord.id} - {ord.customer}</p>
+                                        <p className="text-xs text-slate-400">ফোন: {ord.phone} | {ord.address}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'attendance' && (
+                            <div className="space-y-2">
+                                {attendanceLogs.map(log => (
+                                    <div key={log.id} className="bg-slate-900 p-3 rounded-xl border border-slate-800 flex justify-between">
+                                        <div>
+                                            <p className="font-semibold text-sm">{log.name}</p>
+                                            <p className="text-xs text-slate-400">সময়: {log.time}</p>
+                                        </div>
+                                        <span className="text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded">{log.status}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
 </html>
