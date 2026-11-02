@@ -277,4 +277,11 @@
                                         <label className="block text-sm text-slate-300 mb-1">কর্মী/ম্যানেজার মোবাইল নম্বর</label>
                                         <input type="text" required placeholder="017xxxxxxxx" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
                                     </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-
+                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">প্রবেশ করুন</button>
+                                </form>
+                            )}
+
+                            {authType === 'owner_login' && (
+                                <form onSubmit={handleOwnerLogin} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm text-slate
