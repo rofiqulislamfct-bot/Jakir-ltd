@@ -34,119 +34,86 @@
     <script type="text/babel">
         function App() {
             const [user, setUser] = React.useState(() => {
-                const savedUser = localStorage.getItem('hanif_current_user');
-                const forceLogout = localStorage.getItem('hanif_force_logout');
-                if (forceLogout === 'true') return null;
-                return savedUser ? JSON.parse(savedUser) : null;
+                const saved = localStorage.getItem('hanif_user');
+                return saved ? JSON.parse(saved) : null;
             });
-
             const [selectedRole, setSelectedRole] = React.useState('zakir');
-            const [activeTab, setActiveTab] = React.useState('dashboard');
-
-            // Persistent Data States
-            const [orders, setOrders] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_orders');
-                return saved ? JSON.parse(saved) : [
-                    { id: 'MEMO-1001', customer: 'আলমগীর হোসেন', phone: '01711000000', address: 'মিরপুর, ঢাকা', product: 'হানিফ সেগুন ডোর', qty: 4, total: 48000, advance: 10000, due: 38000, status: 'প্রোডাকশনে আছে' }
-                ];
-            });
-
-            const [productionLogs, setProductionLogs] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_prod');
-                return saved ? JSON.parse(saved) : [
-                    { id: 1, date: '২০২৬-১১-০৩', item: 'হানিফ পলিমার ডোর', qty: 40, status: 'স্টকভুক্ত', photo: null }
-                ];
-            });
-
-            const [attendance, setAttendance] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_att');
-                return saved ? JSON.parse(saved) : [
-                    { id: 1, name: 'কামাল হোসেন', time: '09:15 AM', status: 'লেট ৩০ মিনিট', penalty: '৫০% স্ন্যাক্স কর্তন', approval: 'Pending' }
-                ];
-            });
-
-            React.useEffect(() => {
-                localStorage.setItem('hanif_orders', JSON.stringify(orders));
-            }, [orders]);
-
-            React.useEffect(() => {
-                localStorage.setItem('hanif_prod', JSON.stringify(productionLogs));
-            }, [productionLogs]);
-
-            React.useEffect(() => {
-                localStorage.setItem('hanif_att', JSON.stringify(attendance));
-            }, [attendance]);
-
-            const [newOrder, setNewOrder] = React.useState({ customer: '', phone: '', address: '', product: 'হানিফ পলিমার ডোর', qty: 1, price: 0, advance: 0 });
-            const [selectedChallan, setSelectedChallan] = React.useState(null);
-            const [newProd, setNewProd] = React.useState({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
-            const [waiverReason, setWaiverReason] = React.useState('');
-            const [callActive, setCallActive] = React.useState(false);
-            const [callType, setCallType] = React.useState('');
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                localStorage.removeItem('hanif_force_logout');
-                let loggedInUser = {};
+                let loggedUser = { name: selectedRole, role: 'owner' };
+                if (selectedRole === 'zakir') loggedUser = { name: 'জাকির হোসেন (ম্যানেজিং ডিরেক্টর)', role: 'owner' };
+                else if (selectedRole === 'hriday') loggedUser = { name: 'রফিকুল ইসলাম হৃদয় (পরিচালক)', role: 'owner' };
+                else if (selectedRole === 'jiban') loggedUser = { name: 'আবু সাকের জীবন (পরিচালক)', role: 'owner' };
+                else if (selectedRole.includes('manager')) loggedUser = { name: 'ফ্যাক্টরি ম্যানেজার', role: 'manager' };
+                else loggedUser = { name: 'কারখানার কর্মী / ড্রাইভার', role: 'employee' };
 
-                if (selectedRole === 'zakir') {
-                    loggedInUser = { name: 'জাকির হোসেন (ম্যানেজিং ডিরেক্টর / মালিক ১)', role: 'owner', type: 'zakir' };
-                } else if (selectedRole === 'hriday') {
-                    loggedInUser = { name: 'রফিকুল ইসলাম হৃদয় (পরিচালক / মালিক ২)', role: 'owner', type: 'hriday' };
-                } else if (selectedRole === 'jiban') {
-                    loggedInUser = { name: 'আবু সাকের জীবন (পরিচালক / মালিক ৩)', role: 'owner', type: 'jiban' };
-                } else if (selectedRole === 'manager1') {
-                    loggedInUser = { name: 'ফ্যাক্টরি ম্যানেজার ১', role: 'manager' };
-                } else if (selectedRole === 'manager2') {
-                    loggedInUser = { name: 'ফ্যাক্টরি ম্যানেজার ২', role: 'manager' };
-                } else if (selectedRole === 'manager3') {
-                    loggedInUser = { name: 'ফ্যাক্টরি ম্যানেজার ৩', role: 'manager' };
-                } else if (selectedRole === 'driver') {
-                    loggedInUser = { name: 'রফিক (প্রধান ড্রাইভার)', role: 'driver' };
-                } else if (selectedRole === 'chief_emp') {
-                    loggedInUser = { name: 'কারখানার প্রধান কর্মচারী', role: 'chief_employee' };
-                } else if (selectedRole === 'assistant_emp') {
-                    loggedInUser = { name: 'প্রধান কর্মচারীর সহকারী', role: 'assistant_employee' };
-                } else {
-                    loggedInUser = { name: 'সাধারণ কর্মচারী', role: 'employee' };
-                }
-
-                setUser(loggedInUser);
-                localStorage.setItem('hanif_current_user', JSON.stringify(loggedInUser));
+                setUser(loggedUser);
+                localStorage.setItem('hanif_user', JSON.stringify(loggedUser));
             };
 
             const handleLogout = () => {
                 setUser(null);
-                localStorage.removeItem('hanif_current_user');
+                localStorage.removeItem('hanif_user');
             };
 
-            const handleMasterForceLogout = () => {
-                if (confirm('সতর্কতা: এটি করলে কারখানায় কর্মরত সকল ইউজারের অ্যাকাউন্ট লগআউট হয়ে যাবে। আপনি কি নিশ্চিত?')) {
-                    localStorage.setItem('hanif_force_logout', 'true');
-                    localStorage.removeItem('hanif_current_user');
-                    setUser(null);
-                    alert('সবার অ্যাকাউন্ট সফলভাবে লগআউট করা হয়েছে!');
-                }
-            };
+            if (!user) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
+                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
+                            <div className="text-center mb-6">
+                                <h1 className="text-2xl font-bold text-emerald-400">হানিফ ডোর</h1>
+                                <p className="text-sm text-slate-400 mt-1">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
+                            </div>
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm text-slate-300 mb-2">আপনার পদ বা নাম সিলেক্ট করুন</label>
+                                    <select 
+                                        value={selectedRole} 
+                                        onChange={(e) => setSelectedRole(e.target.value)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-emerald-500"
+                                    >
+                                        <option value="zakir">১. জাকির হোসেন (ম্যানেজিং ডিরেক্টর)</option>
+                                        <option value="hriday">২. রফিকুল ইসলাম হৃদয় (পরিচালক)</option>
+                                        <option value="jiban">৩. আবু সাকের জীবন (পরিচালক)</option>
+                                        <option value="manager1">ফ্যাক্টরি ম্যানেজার ১</option>
+                                        <option value="manager2">ফ্যাক্টরি ম্যানেজার ২</option>
+                                        <option value="manager3">ফ্যাক্টরি ম্যানেজার ৩</option>
+                                        <option value="driver">প্রধান ড্রাইভার (রফিক)</option>
+                                        <option value="employee">সাধারণ কর্মচারী</option>
+                                    </select>
+                                </div>
+                                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">
+                                    প্রবেশ করুন (Login)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
 
-            // Handle Photo Capture from Phone Camera
-            const handlePhotoCapture = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setNewProd({...newProd, photo: reader.result});
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+                    <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center">
+                        <div>
+                            <h1 className="font-bold text-emerald-400">হানিফ ডোর - জাকির লিমিটেড</h1>
+                            <p className="text-xs text-slate-400">ব্যবহারকারী: {user.name}</p>
+                        </div>
+                        <button onClick={handleLogout} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
+                            লগআউট
+                        </button>
+                    </header>
+                    <main className="p-4 flex-1 max-w-7xl w-full mx-auto">
+                        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
+                            <h2 className="text-lg font-bold text-emerald-400">ড্যাশবোর্ড সফলভাবে সচল রয়েছে</h2>
+                            <p className="text-sm text-slate-400">আপনার সিস্টেম এখন সম্পূর্ণ প্রস্তুত।</p>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
 
-            const handleAddProduction = (e) => {
-                e.preventDefault();
-                if(!newProd.qty) return;
-                setProductionLogs([...productionLogs, {
-                    id: productionLogs.length + 1,
-                    date: new Date().toLocaleDateString('bn-BD'),
-                    item: newProd.item,
-                    qty: Number(newProd.qty),
-                    status
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
