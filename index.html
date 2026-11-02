@@ -40,16 +40,14 @@
                 return saved ? JSON.parse(saved) : null;
             });
 
-            const [authType, setAuthType] = React.useState('staff_login'); // 'staff_login', 'owner_login', 'staff_reg', 'owner_reg'
+            const [authType, setAuthType] = React.useState('staff_login'); 
             const [loginPhone, setLoginPhone] = React.useState('');
             const [loginCode, setLoginCode] = React.useState('');
             const [activeTab, setActiveTab] = React.useState('dashboard');
 
-            // Form States
             const [regStaff, setRegStaff] = React.useState({ name: '', phone: '', email: '' });
             const [regOwner, setRegOwner] = React.useState({ name: '', phone: '', email: '', code: '' });
 
-            // Staff & Owners Database
             const [staffList, setStaffList] = React.useState(() => {
                 const saved = localStorage.getItem('hanif_staff');
                 return saved ? JSON.parse(saved) : [
@@ -90,7 +88,6 @@
             const [newProd, setNewProd] = React.useState({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
             const [selectedChallan, setSelectedChallan] = React.useState(null);
 
-            // Handle Staff Login (No code required)
             const handleStaffLogin = (e) => {
                 e.preventDefault();
                 localStorage.removeItem('hanif_force');
@@ -107,7 +104,6 @@
                 }
             };
 
-            // Handle Owner Login (Requires Security Code)
             const handleOwnerLogin = (e) => {
                 e.preventDefault();
                 localStorage.removeItem('hanif_force');
@@ -124,7 +120,6 @@
                 }
             };
 
-            // Staff Registration (No code needed)
             const handleStaffRegister = (e) => {
                 e.preventDefault();
                 if(!regStaff.phone.startsWith('01') || regStaff.phone.length !== 11) {
@@ -154,7 +149,6 @@
                 setRegStaff({ name: '', phone: '', email: '' });
             };
 
-            // Owner Registration (Requires Special Security Code)
             const handleOwnerRegister = (e) => {
                 e.preventDefault();
                 if(!regOwner.phone.startsWith('01') || regOwner.phone.length !== 11) {
@@ -184,7 +178,7 @@
                 setRegOwner({ name: '', phone: '', email: '', code: '' });
             };
 
-            const handleлюми = () => {
+            const handleLogout = () => {
                 setUser(null);
                 localStorage.removeItem('hanif_user');
             };
@@ -270,7 +264,6 @@
                                 <p className="text-sm text-slate-400 mt-1">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
                             </div>
 
-                            {/* Auth Switcher */}
                             <div className="grid grid-cols-2 gap-1 bg-slate-800 p-1 rounded-xl text-xs font-semibold">
                                 <button onClick={() => setAuthType('staff_login')} className={`py-2 rounded-lg transition ${authType === 'staff_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী লগইন</button>
                                 <button onClick={() => setAuthType('owner_login')} className={`py-2 rounded-lg transition ${authType === 'owner_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক লগইন</button>
@@ -278,55 +271,10 @@
                                 <button onClick={() => setAuthType('owner_reg')} className={`py-2 rounded-lg transition ${authType === 'owner_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক রেজিস্ট্রেশন</button>
                             </div>
 
-                            {/* 1. Staff Login */}
                             {authType === 'staff_login' && (
                                 <form onSubmit={handleStaffLogin} className="space-y-4">
                                     <div>
                                         <label className="block text-sm text-slate-300 mb-1">কর্মী/ম্যানেজার মোবাইল নম্বর</label>
                                         <input type="text" required placeholder="017xxxxxxxx" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
                                     </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">প্রবেশ করুন</button>
-                                </form>
-                            )}
-
-                            {/* 2. Owner Login (With Code) */}
-                            {authType === 'owner_login' && (
-                                <form onSubmit={handleOwnerLogin} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm text-slate-300 mb-1">মালিকের মোবাইল নম্বর</label>
-                                        <input type="text" required placeholder="01700000001" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm text-slate-300 mb-1">স্পেশাল সিকিউরিটি কোড</label>
-                                        <input type="password" required placeholder="কোড দিন" value={loginCode} onChange={(e) => setLoginCode(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
-                                    </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">মালিক হিসেবে প্রবেশ</button>
-                                    <p className="text-xs text-slate-400 bg-slate-800/60 p-2.5 rounded-lg">ডেমো কোড: জাকির (`01700000001`, কোড: `7771`), হৃদয় (`01700000002`, কোড: `7772`), জীবন (`01700000003`, কোড: `7773`)</p>
-                                </form>
-                            )}
-
-                            {/* 3. Staff Registration */}
-                            {authType === 'staff_reg' && (
-                                <form onSubmit={handleStaffRegister} className="space-y-3 text-sm">
-                                    <div>
-                                        <label className="block text-xs text-slate-400 mb-1">পূর্ণ নাম</label>
-                                        <input type="text" required placeholder="নাম লিখুন" value={regStaff.name} onChange={(e) => setRegStaff({...regStaff, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-slate-400 mb-1">মোবাইল নম্বর</label>
-                                        <input type="text" required placeholder="017xxxxxxxx" value={regStaff.phone} onChange={(e) => setRegStaff({...regStaff, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-slate-400 mb-1">জিমেইল (Gmail)</label>
-                                        <input type="email" placeholder="example@gmail.com" value={regStaff.email} onChange={(e) => setRegStaff({...regStaff, email: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
-                                    </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg mt-2">কর্মী রেজিস্ট্রেশন (Pending)</button>
-                                </form>
-                            )}
-
-                            {/* 4. Owner Registration (With Code) */}
-                            {authType === 'owner_reg' && (
-                                <form onSubmit={handleOwnerRegister} className="space-y-3 text-sm">
-                                    <div>
-                                        <label className="block text-xs text-slate-400 mb-1">মালিকের পূর্ণ নাম</label>
-                                        <input type="text" required placeholder="নাম লিখুন" value={regOwner.name} onChange={(e) => setRegOwner({...regOwner, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-
+                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-
