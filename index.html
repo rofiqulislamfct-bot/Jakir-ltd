@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn" class="dark">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,37 +7,25 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#10B981',
-                        darkBg: '#0F172A',
-                        cardBg: '#1E293B'
-                    }
-                }
-            }
-        }
-    </script>
     <!-- React & Babel -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Hind Siliguri', sans-serif; }</style>
+    <style>body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
+<body class="min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
         function App() {
             const [user, setUser] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_user');
-                const forceLogout = localStorage.getItem('hanif_force');
-                if (forceLogout === 'true') return null;
-                return saved ? JSON.parse(saved) : null;
+                try {
+                    const saved = localStorage.getItem('hanif_user');
+                    return saved ? JSON.parse(saved) : null;
+                } catch(e) {
+                    return null;
+                }
             });
 
             const [authType, setAuthType] = React.useState('staff_login'); 
@@ -49,27 +37,31 @@
             const [regOwner, setRegOwner] = React.useState({ name: '', phone: '', email: '', code: '' });
 
             const [staffList, setStaffList] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_staff');
-                return saved ? JSON.parse(saved) : [
-                    { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
-                    { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
-                    { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
-                    { id: 4, name: 'ফ্যাক্টরি ম্যানেজার', role: 'Manager', phone: '01700000004', code: '', email: 'manager@jakirltd.com', salary: 25000, snacks: 1500, fine: 0, isOwner: false, status: 'Active' }
-                ];
+                try {
+                    const saved = localStorage.getItem('hanif_staff');
+                    return saved ? JSON.parse(saved) : [
+                        { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
+                        { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
+                        { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
+                        { id: 4, name: 'ফ্যাক্টরি ম্যানেজার', role: 'Manager', phone: '01700000004', code: '', email: 'manager@jakirltd.com', salary: 25000, snacks: 1500, fine: 0, isOwner: false, status: 'Active' }
+                    ];
+                } catch(e) {
+                    return [];
+                }
             });
 
             const [orders, setOrders] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_orders');
-                return saved ? JSON.parse(saved) : [
-                    { id: 'MEMO-1001', customer: 'আলমগীর হোসেন', phone: '01711000000', address: 'মিরপুর, ঢাকা', product: 'হানিফ সেগুন ডোর', qty: 4, total: 48000, advance: 10000, due: 38000, status: 'প্রোডাকশনে আছে' }
-                ];
+                try {
+                    const saved = localStorage.getItem('hanif_orders');
+                    return saved ? JSON.parse(saved) : [];
+                } catch(e) { return []; }
             });
 
             const [productionLogs, setProductionLogs] = React.useState(() => {
-                const saved = localStorage.getItem('hanif_prod');
-                return saved ? JSON.parse(saved) : [
-                    { id: 1, date: '২০২৬-১১-০৩', item: 'হানিফ পলিমার ডোর', qty: 40, status: 'স্টকভুক্ত', photo: null }
-                ];
+                try {
+                    const saved = localStorage.getItem('hanif_prod');
+                    return saved ? JSON.parse(saved) : [];
+                } catch(e) { return []; }
             });
 
             React.useEffect(() => {
@@ -90,7 +82,6 @@
 
             const handleStaffLogin = (e) => {
                 e.preventDefault();
-                localStorage.removeItem('hanif_force');
                 const found = staffList.find(s => s.phone.trim() === loginPhone.trim() && !s.isOwner);
                 if (found) {
                     if (found.status !== 'Active') {
@@ -106,7 +97,6 @@
 
             const handleOwnerLogin = (e) => {
                 e.preventDefault();
-                localStorage.removeItem('hanif_force');
                 const found = staffList.find(s => s.phone.trim() === loginPhone.trim() && s.isOwner);
                 if (found) {
                     if (found.code !== loginCode) {
@@ -185,15 +175,9 @@
 
             const handleMasterLogout = () => {
                 if(confirm('সবার অ্যাকাউন্ট লগআউট করতে চান?')) {
-                    localStorage.setItem('hanif_force', 'true');
                     localStorage.removeItem('hanif_user');
                     setUser(null);
                 }
-            };
-
-            const handleForceLogoutSpecific = (staffId) => {
-                setStaffList(staffList.map(s => s.id === staffId ? { ...s, status: 'LoggedOut' } : s));
-                alert('এই কর্মীর সেশন টার্মিনেট করা হয়েছে!');
             };
 
             const handleConfirmStaff = (id) => {
@@ -257,31 +241,72 @@
 
             if (!user) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
-                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md space-y-5">
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950 text-slate-100">
+                        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-4">
                             <div className="text-center">
-                                <h1 className="text-2xl font-bold text-emerald-400">হানিফ ডোর</h1>
-                                <p className="text-sm text-slate-400 mt-1">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
+                                <h1 className="text-xl font-bold text-emerald-400">হানিফ ডোর</h1>
+                                <p className="text-xs text-slate-400">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-1 bg-slate-800 p-1 rounded-xl text-xs font-semibold">
-                                <button onClick={() => setAuthType('staff_login')} className={`py-2 rounded-lg transition ${authType === 'staff_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী লগইন</button>
-                                <button onClick={() => setAuthType('owner_login')} className={`py-2 rounded-lg transition ${authType === 'owner_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক লগইন</button>
-                                <button onClick={() => setAuthType('staff_reg')} className={`py-2 rounded-lg transition ${authType === 'staff_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী রেজিস্ট্রেশন</button>
-                                <button onClick={() => setAuthType('owner_reg')} className={`py-2 rounded-lg transition ${authType === 'owner_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক রেজিস্ট্রেশন</button>
+                                <button onClick={() => setAuthType('staff_login')} className={`py-2 rounded-lg ${authType === 'staff_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী লগইন</button>
+                                <button onClick={() => setAuthType('owner_login')} className={`py-2 rounded-lg ${authType === 'owner_login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক লগইন</button>
+                                <button onClick={() => setAuthType('staff_reg')} className={`py-2 rounded-lg ${authType === 'staff_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>কর্মী রেজিস্ট্রেশন</button>
+                                <button onClick={() => setAuthType('owner_reg')} className={`py-2 rounded-lg ${authType === 'owner_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক রেজিস্ট্রেশন</button>
                             </div>
 
                             {authType === 'staff_login' && (
-                                <form onSubmit={handleStaffLogin} className="space-y-4">
+                                <form onSubmit={handleStaffLogin} className="space-y-3">
                                     <div>
-                                        <label className="block text-sm text-slate-300 mb-1">কর্মী/ম্যানেজার মোবাইল নম্বর</label>
-                                        <input type="text" required placeholder="017xxxxxxxx" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 text-center tracking-widest text-base" />
+                                        <label className="block text-xs text-slate-300 mb-1">কর্মী মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="017xxxxxxxx" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center" />
                                     </div>
-                                    <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">প্রবেশ করুন</button>
+                                    <button type="submit" className="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg">প্রবেশ করুন</button>
                                 </form>
                             )}
 
                             {authType === 'owner_login' && (
-                                <form onSubmit={handleOwnerLogin} className="space-y-4">
+                                <form onSubmit={handleOwnerLogin} className="space-y-3">
                                     <div>
-                                        <label className="block text-sm text-slate
+                                        <label className="block text-xs text-slate-300 mb-1">মালিকের মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="01700000001" value={loginPhone} onChange={(e) => setLoginPhone(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-300 mb-1">সিকিউরিটি কোড</label>
+                                        <input type="password" required placeholder="কোড দিন" value={loginCode} onChange={(e) => setLoginCode(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center" />
+                                    </div>
+                                    <button type="submit" className="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg">মালিক হিসেবে প্রবেশ</button>
+                                    <p className="text-[11px] text-slate-400 bg-slate-800/60 p-2 rounded">ডেমো: জাকির (`01700000001`, কোড: `7771`), হৃদয় (`01700000002`, কোড: `7772`), জীবন (`01700000003`, কোড: `7773`)</p>
+                                </form>
+                            )}
+
+                            {authType === 'staff_reg' && (
+                                <form onSubmit={handleStaffRegister} className="space-y-2.5 text-xs">
+                                    <div>
+                                        <label className="text-slate-400 mb-1 block">পূর্ণ নাম</label>
+                                        <input type="text" required placeholder="নাম লিখুন" value={regStaff.name} onChange={(e) => setRegStaff({...regStaff, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-slate-400 mb-1 block">মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="017xxxxxxxx" value={regStaff.phone} onChange={(e) => setRegStaff({...regStaff, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-slate-400 mb-1 block">জিমেইল</label>
+                                        <input type="email" placeholder="example@gmail.com" value={regStaff.email} onChange={(e) => setRegStaff({...regStaff, email: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+                                    </div>
+                                    <button type="submit" className="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg mt-1">কর্মী রেজিস্ট্রেশন</button>
+                                </form>
+                            )}
+
+                            {authType === 'owner_reg' && (
+                                <form onSubmit={handleOwnerRegister} className="space-y-2.5 text-xs">
+                                    <div>
+                                        <label className="text-slate-400 mb-1 block">মালিকের নাম</label>
+                                        <input type="text" required placeholder="নাম লিখুন" value={regOwner.name} onChange={(e) => setRegOwner({...regOwner, name: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-slate-400 mb-1 block">মোবাইল নম্বর</label>
+                                        <input type="text" required placeholder="017xxxxxxxx" value={regOwner.phone} onChange={(e) => setRegOwner({...regOwner, phone: e.target.value})} className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white" />
+                                    </div>
+                                    <div>
+                                        <label className="text-slate-400 mb-1 block">জিমেইল</label
