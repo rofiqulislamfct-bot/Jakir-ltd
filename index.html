@@ -58,17 +58,22 @@
             const [newOrder, setNewOrder] = React.useState({ customer: '', phone: '', address: '', product: '', qty: 1, price: 0, advance: 0 });
             const [selectedChallan, setSelectedChallan] = React.useState(null);
 
-            // Attendance State
+            // Production State (Manager Module)
+            const [productionLogs, setProductionLogs] = React.useState([
+                { id: 1, date: '২০২৬-১১-০৩', item: 'হানিফ পলিমার ডোর', qty: 40, status: 'মানসম্মত ও স্টকভুক্ত' }
+            ]);
+            const [newProd, setNewProd] = React.useState({ item: 'হানিফ পলিমার ডোর', qty: '', note: '' });
+
+            // Attendance & Penalty Waiver State (Owner Approval)
             const [attendance, setAttendance] = React.useState([
-                { id: 1, name: 'কামাল হোসেন', time: '09:15 AM', status: 'লেট ৩০ মিনিট', penalty: 'সতর্কতা ও ৫০% স্ন্যাক্স কর্তন' },
-                { id: 2, name: 'রহিম মিয়া', time: '09:45 AM', status: 'লেট ১ ঘণ্টা', penalty: '১০০% স্ন্যাক্স কর্তন' }
+                { id: 1, name: 'কামাল হোসেন', time: '09:15 AM', status: 'লেট ৩০ মিনিট', penalty: '৫০% স্ন্যাক্স কর্তন', approval: 'Pending' }
             ]);
 
             // Finance State
             const [finances, setFinances] = React.useState({
                 cashSales: 35000,
                 bkashBank: 15000,
-                expenses: 4200:w
+                expenses: 4200
             });
 
             const handleLogin = (e) => {
@@ -104,6 +109,24 @@
                 setOrders([...orders, orderObj]);
                 setNewOrder({ customer: '', phone: '', address: '', product: '', qty: 1, price: 0, advance: 0 });
                 alert('নতুন মেমো সফলভাবে তৈরি হয়েছে!');
+            };
+
+            const handleAddProduction = (e) => {
+                e.preventDefault();
+                if(!newProd.qty) return;
+                setProductionLogs([...productionLogs, {
+                    id: productionLogs.length + 1,
+                    date: new Date().toLocaleDateString('bn-BD'),
+                    item: newProd.item,
+                    qty: Number(newProd.qty),
+                    status: 'ম্যানেজার কর্তৃক এন্ট্রি কৃত'
+                }]);
+                setNewProd({ item: 'হানিফ পলিমার ডোর', qty: '', note: '' });
+                alert('প্রোডাকশন স্টক সফলভাবে আপডেট হয়েছে!');
+            };
+
+            const handleApproval = (id, status) => {
+                setAttendance(attendance.map(item => item.id === id ? {...item, approval: status} : item));
             };
 
             const handlePrint = (order) => {
@@ -142,4 +165,48 @@
                                 <p className="text-xs text-center text-slate-500 mt-4">
                                     টিপস: Owner হিসেবে ঢুকতে ইমেইলে 'owner' লিখে লগইন করুন।
                                 </p>
-                            </form
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+                    <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-50">
+                        <div>
+                            <h1 className="font-bold text-emerald-400">হানিফ ডোর - জাকির লিমিটেড</h1>
+                            <p className="text-xs text-slate-400">ব্যবহারকারী: {user.name} ({user.role.toUpperCase()})</p>
+                        </div>
+                        <button onClick={() => setUser(null)} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
+                            লগআউট
+                        </button>
+                    </header>
+
+                    {/* Navigation Tabs */}
+                    <nav className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-sm">
+                        <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>ড্যাশবোর্ড</button>
+                        <button onClick={() => setActiveTab('production')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'production' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>ম্যানেজার ও প্রোডাকশন</button>
+                        <button onClick={() => setActiveTab('orders')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'orders' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>মেমো ও অর্ডার</button>
+                        <button onClick={() => setActiveTab('attendance')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'attendance' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>উপস্থিতি ও ওনার অ্যাপ্রুভাল</button>
+                        <button onClick={() => setActiveTab('driver')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'driver' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>ড্রাইভার ও GPS</button>
+                        <button onClick={() => setActiveTab('finance')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'finance' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>আর্থিক হিসাব</button>
+                    </nav>
+
+                    <main className="p-4 flex-1 max-w-7xl w-full mx-auto space-y-4">
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                                        <p className="text-xs text-slate-400">মোট অর্ডার</p>
+                                        <h3 className="text-xl font-bold text-emerald-400 mt-1">{orders.length} টি</h3>
+                                    </div>
+                                    <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                                        <p className="text-xs text-slate-400">আজকের ক্যাশ সেলস</p>
+                                        <h3 className="text-xl font-bold text-emerald-400 mt-1">৳ {finances.cashSales}</h3>
+                                    </div>
+                                </div>
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
+                                    <h2 className="text-lg font-bold text-emerald-400">হানিফ ডোর ম্যানেজমেন্ট প্যানেল</h2>
+                                    <p className="text-sm text-slate-400">এখানে তিন সমান ক্ষমতার মালিক (জাকির হোসেন, রফিকুল ইসলাম হৃদয়, আবু সাকের জীবন) যৌথভাবে কারখানা পরিচালনা করছেন। জাকির ইলেকট্রনিক্স সম্পূর্ণ বাদ দিয়ে অ্যাপটি শুধুমাত্র হানিফ ডোর ইউনিটের জন্য তৈরি।</p>
+                               
