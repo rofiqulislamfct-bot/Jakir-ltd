@@ -33,16 +33,31 @@
 
     <script type="text/babel">
         function App() {
+            // Global Session State
             const [user, setUser] = React.useState(() => {
                 const saved = localStorage.getItem('hanif_user');
                 const forceLogout = localStorage.getItem('hanif_force');
                 if (forceLogout === 'true') return null;
                 return saved ? JSON.parse(saved) : null;
             });
-            const [selectedRole, setSelectedRole] = React.useState('zakir');
+
+            const [loginPhone, setLoginPhone] = React.useState('');
             const [activeTab, setActiveTab] = React.useState('dashboard');
 
-            // Data States
+            // Staff & Salary Database (Managed by Owners)
+            const [staffList, setStaffList] = React.useState(() => {
+                const saved = localStorage.getItem('hanif_staff');
+                return saved ? JSON.parse(saved) : [
+                    { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', salary: 0, fine: 0, status: 'Active' },
+                    { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', salary: 0, fine: 0, status: 'Active' },
+                    { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', salary: 0, fine: 0, status: 'Active' },
+                    { id: 4, name: 'ফ্যাক্টরি ম্যানেজার ১', role: 'Manager', phone: '01700000004', salary: 25000, fine: 0, status: 'Active' },
+                    { id: 5, name: 'কামাল হোসেন', role: 'প্রধান কর্মচারী', phone: '01711223344', salary: 15000, fine: 500, status: 'Active' },
+                    { id: 6, name: 'রফিক', role: 'প্রধান ড্রাইভার', phone: '01799887766', salary: 16000, fine: 0, status: 'Active' }
+                ];
+            });
+
+            // Persistent Orders & Production
             const [orders, setOrders] = React.useState(() => {
                 const saved = localStorage.getItem('hanif_orders');
                 return saved ? JSON.parse(saved) : [
@@ -58,6 +73,10 @@
             });
 
             React.useEffect(() => {
+                localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            }, [staffList]);
+
+            React.useEffect(() => {
                 localStorage.setItem('hanif_orders', JSON.stringify(orders));
             }, [orders]);
 
@@ -69,18 +88,26 @@
             const [newProd, setNewProd] = React.useState({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
             const [selectedChallan, setSelectedChallan] = React.useState(null);
 
+            // New Staff Form State
+            const [newStaff, setNewStaff] = React.useState({ name: '', role: 'সাধারণ কর্মচারী', phone: '', salary: '' });
+
             const handleLogin = (e) => {
                 e.preventDefault();
                 localStorage.removeItem('hanif_force');
-                let loggedUser = {};
-                if (selectedRole === 'zakir') loggedUser = { name: 'জাকির হোসেন (ম্যানেজিং ডিরেক্টর)', role: 'owner' };
-                else if (selectedRole === 'hriday') loggedUser = { name: 'রফিকুল ইসলাম হৃদয় (পরিচালক)', role: 'owner' };
-                else if (selectedRole === 'jiban') loggedUser = { name: 'আবু সাকের জীবন (পরিচালক)', role: 'owner' };
-                else if (selectedRole.includes('manager')) loggedUser = { name: 'ফ্যাক্টরি ম্যানেজার', role: 'manager' };
-                else loggedUser = { name: 'কারখানার কর্মী / ড্রাইভার', role: 'employee' };
-
-                setUser(loggedUser);
-                localStorage.setItem('hanif_user', JSON.stringify(loggedUser));
+                
+                const foundStaff = staffList.find(s => s.phone === loginPhone && s.status === 'Active');
+                if (foundStaff) {
+                    let userObj = { ...foundStaff };
+                    if (foundStaff.phone === '01700000001' || foundStaff.phone === '01700000002' || foundStaff.phone === '01700000003' || foundStaff.role.includes('মালিক')) {
+                        userObj.isOwner = true;
+                    } else {
+                        userObj.isOwner = false;
+                    }
+                    setUser(userObj);
+                    localStorage.setItem('hanif_user', JSON.stringify(userObj));
+                } else {
+                    alert('ভুল ফোন নম্বর অথবা অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে!');
+                }
             };
 
             const handleLogout = () => {
@@ -94,6 +121,34 @@
                     localStorage.removeItem('hanif_user');
                     setUser(null);
                 }
+            };
+
+            // Owner Action: Force Logout Specific User
+            const handleForceLogoutSpecific = (staffId) => {
+                setStaffList(staffList.map(s => s.id === staffId ? { ...s, status: 'LoggedOut' } : s));
+                alert('এই কর্মীর সেশন টার্মিনেট করা হয়েছে!');
+            };
+
+            // Owner Action: Add Staff / Assign Salary & Role
+            const handleAddStaff = (e) => {
+                e.preventDefault();
+                const staffObj = {
+                    id: staffList.length + 1,
+                    name: newStaff.name,
+                    role: newStaff.role,
+                    phone: newStaff.phone,
+                    salary: Number(newStaff.salary),
+                    fine: 0,
+                    status: 'Active'
+                };
+                setStaffList([...staffList, staffObj]);
+                setNewStaff({ name: '', role: 'সাধারণ কর্মচারী', phone: '', salary: '' });
+                alert('নতুন কর্মী ও বেতন সফলভাবে নির্ধারণ করা হয়েছে!');
+            };
+
+            // Owner Action: Update Fine / Penalty
+            const handleUpdateFine = (id, amount) => {
+                setStaffList(staffList.map(s => s.id === id ? { ...s, fine: s.fine + Number(amount) } : s));
             };
 
             const handleCreateOrder = (e) => {
@@ -151,25 +206,22 @@
                             </div>
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm text-slate-300 mb-2">আপনার পদ বা নাম সিলেক্ট করুন</label>
-                                    <select 
-                                        value={selectedRole} 
-                                        onChange={(e) => setSelectedRole(e.target.value)}
-                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-emerald-500"
-                                    >
-                                        <option value="zakir">১. জাকির হোসেন (ম্যানেজিং ডিরেক্টর)</option>
-                                        <option value="hriday">২. রফিকুল ইসলাম হৃদয় (পরিচালক)</option>
-                                        <option value="jiban">৩. আবু সাকের জীবন (পরিচালক)</option>
-                                        <option value="manager1">ফ্যাক্টরি ম্যানেজার ১</option>
-                                        <option value="manager2">ফ্যাক্টরি ম্যানেজার ২</option>
-                                        <option value="manager3">ফ্যাক্টরি ম্যানেজার ৩</option>
-                                        <option value="driver">প্রধান ড্রাইভার (রফিক)</option>
-                                        <option value="employee">সাধারণ কর্মচারী</option>
-                                    </select>
+                                    <label className="block text-sm text-slate-300 mb-2">আপনার মোবাইল নম্বর দিয়ে প্রবেশ করুন</label>
+                                    <input 
+                                        type="text" 
+                                        required 
+                                        placeholder="যেমন: 01700000001" 
+                                        value={loginPhone} 
+                                        onChange={(e) => setLoginPhone(e.target.value)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-emerald-500 text-center text-lg tracking-widest"
+                                    />
                                 </div>
                                 <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">
-                                    প্রবেশ করুন (Login)
+                                    লগইন করুন
                                 </button>
+                                <p className="text-xs text-slate-500 text-center mt-2">
+                                    ডিমো নম্বর: মালিক ১ (`01700000001`), ম্যানেজার (`01700000004`), ড্রাইভার (`01799887766`)
+                                </p>
                             </form>
                         </div>
                     </div>
@@ -181,10 +233,10 @@
                     <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-50">
                         <div>
                             <h1 className="font-bold text-emerald-400">হানিফ ডোর - জাকির লিমিটেড</h1>
-                            <p className="text-xs text-slate-400">ব্যবহারকারী: {user.name}</p>
+                            <p className="text-xs text-slate-400">ব্যবহারকারী: {user.name} ({user.role})</p>
                         </div>
                         <div className="flex gap-2">
-                            {user.role === 'owner' && (
+                            {user.isOwner && (
                                 <button onClick={handleMasterLogout} className="bg-amber-600/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
                                     🔴 সবার লগআউট
                                 </button>
@@ -198,15 +250,75 @@
                     {/* Navigation Tabs */}
                     <nav className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-sm">
                         <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>ড্যাশবোর্ড</button>
+                        <button onClick={() => setActiveTab('profile')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'profile' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>আমার প্রোফাইল ও বেতন</button>
+                        {user.isOwner && (
+                            <button onClick={() => setActiveTab('owner_panel')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'owner_panel' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>👑 মালিক নিয়ন্ত্রণ প্যানেল</button>
+                        )}
                         <button onClick={() => setActiveTab('orders')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'orders' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>মেমো ও চালান</button>
                         <button onClick={() => setActiveTab('production')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'production' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>প্রোডাকশন ও ক্যামেরা</button>
                     </nav>
 
                     <main className="p-4 flex-1 max-w-7xl w-full mx-auto space-y-4">
                         {activeTab === 'dashboard' && (
-                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
-                                <h2 className="text-lg font-bold text-emerald-400">ড্যাশবোর্ড ও সামারি</h2>
-                                <p className="text-sm text-slate-400">মোট অর্ডার: {orders.length} টি | প্রোডাকশন লগ: {productionLogs.length} টি</p>
+                            <div className="space-y-4">
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
+                                    <h2 className="text-lg font-bold text-emerald-400">স্বাগতম, {user.name}</h2>
+                                    <p className="text-sm text-slate-400">আপনার পদ: <span className="text-white font-semibold">{user.role}</span></p>
+                                    <p className="text-xs text-emerald-300">সিস্টেমের সকল কার্যক্রম স্বাভাবিক ও সুরক্ষিত রয়েছে।</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'profile' && (
+                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4 max-w-xl">
+                                <h2 className="text-lg font-bold text-emerald-400">ব্যক্তিগত প্রোফাইল ও বেতন বিবরণী</h2>
+                                <div className="bg-slate-800 p-4 rounded-xl space-y-2 text-sm">
+                                    <p><span className="text-slate-400">নাম:</span> <strong className="text-white">{user.name}</strong></p>
+                                    <p><span className="text-slate-400">পদবি / পোস্ট:</span> <strong className="text-emerald-400">{user.role}</strong></p>
+                                    <p><span className="text-slate-400">মোবাইল নম্বর:</span> <strong className="text-white">{user.phone}</strong></p>
+                                    <p><span className="text-slate-400">মূল বেতন:</span> <strong className="text-emerald-400">৳ {user.salary || 0}</strong></p>
+                                    <p><span className="text-slate-400">জরিমানা / ফাইন (Fine):</span> <strong className="text-red-400">৳ {user.fine || 0}</strong></p>
+                                </div>
+                            </div>
+                        )}
+
+                        {user.isOwner && activeTab === 'owner_panel' && (
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                                    <h2 className="text-lg font-bold text-emerald-400 mb-4">নতুন কর্মী নিয়োগ ও বেতন/পোস্ট নির্ধারণ</h2>
+                                    <form onSubmit={handleAddStaff} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        <input type="text" required placeholder="কর্মীর নাম" value={newStaff.name} onChange={(e) => setNewStaff({...newStaff, name: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="text" required placeholder="মোবাইল নম্বর (লগইনের জন্য)" value={newStaff.phone} onChange={(e) => setNewStaff({...newStaff, phone: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="text" required placeholder="পদবি বা পোস্ট (যেমন: ম্যানেজার/কারিগর)" value={newStaff.role} onChange={(e) => setNewStaff({...newStaff, role: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="number" required placeholder="মূল বেতন (টাকা)" value={newStaff.salary} onChange={(e) => setNewStaff({...newStaff, salary: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <div className="md:col-span-2 flex justify-end">
+                                            <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-lg font-semibold">কর্মী তালিকাভুক্ত করুন</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3">
+                                    <h2 className="text-lg font-bold text-emerald-400">সকল কর্মী ব্যবস্থাপনা ও ফাইন (Fine) নিয়ন্ত্রণ</h2>
+                                    {staffList.map(st => (
+                                        <div key={st.id} className="bg-slate-800 p-4 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3 text-sm">
+                                            <div>
+                                                <p className="font-bold text-white">{st.name} <span className="text-xs text-emerald-400">({st.role})</span></p>
+                                                <p className="text-xs text-slate-400">ফোন: {st.phone} | বেতন: ৳ {st.salary} | জরিমানা: <span className="text-red-400">৳ {st.fine}</span></p>
+                                            </div>
+                                            <div className="flex gap-2 items-center">
+                                                <button onClick={() => {
+                                                    const amt = prompt('কত টাকা ফাইন বা জরিমানা যোগ করতে চান?');
+                                                    if(amt) handleUpdateFine(st.id, amt);
+                                                }} className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded text-xs font-bold">
+                                                    ⚠️ ফাইন যোগ করুন
+                                                </button>
+                                                <button onClick={() => handleForceLogoutSpecific(st.id)} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-xs font-medium">
+                                                    লগআউট করান
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
