@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>হানিফ ডোর - জাকির লিমিটেড</title>
+    
+    <!-- Inline Web App Manifest (PWA Download Support) -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"JAKIR LTD - Hanif Door","short_name":"JAKIR LTD","start_url":"./","display":"standalone","background_color":"#0f172a","theme_color":"#10b981","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/5968/5968260.png","sizes":"512x512","type":"image/png"}]}'>
+    <meta name="theme-color" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,18 +36,34 @@
         body { font-family: 'Hind Siliguri', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-Y-screen">
+<body class="bg-slate-950 text-slate-100 min-h-screen">
     <div id="root"></div>
 
+    <!-- Register Service Worker for PWA Installation -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            const swCode = `
+                self.addEventListener('install', (e) => {
+                    self.skipWaiting();
+                });
+                self.addEventListener('fetch', (e) => {
+                    e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
+                });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+    </script>
+
+    <!-- React Application Logic -->
     <script type="text/babel">
         function App() {
-            // State management for Authentication & Dashboards
-            const [user, setUser] = React.useState(null); // { name, role }
+            const [user, setUser] = React.useState(null);
             const [email, setEmail] = React.useState('');
             const [password, setPassword] = React.useState('');
             const [activeTab, setActiveTab] = React.useState('dashboard');
 
-            // Hardcoded Demo Accounts for Roles as per Master Prompt
             const handleLogin = (e) => {
                 e.preventDefault();
                 if (email.includes('owner') || email === 'zakir@jakirltd.com') {
@@ -60,7 +83,6 @@
                 setPassword('');
             };
 
-            // Login Screen UI if not logged in
             if (!user) {
                 return (
                     <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
@@ -107,10 +129,8 @@
                 );
             }
 
-            // Main Dashboard after login
             return (
                 <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-                    {/* Header */}
                     <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center">
                         <div>
                             <h1 className="font-bold text-emerald-400">হানিফ ডোর - জাকির লিমিটেড</h1>
@@ -124,7 +144,6 @@
                         </button>
                     </header>
 
-                    {/* Navigation Tabs */}
                     <nav className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-sm">
                         <button 
                             onClick={() => setActiveTab('dashboard')}
@@ -152,7 +171,6 @@
                         </button>
                     </nav>
 
-                    {/* Content Body */}
                     <main className="p-4 flex-1 max-w-7xl w-full mx-auto space-y-4">
                         {activeTab === 'dashboard' && (
                             <div className="space-y-4">
