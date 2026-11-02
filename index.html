@@ -35,13 +35,44 @@
         function App() {
             const [user, setUser] = React.useState(() => {
                 const saved = localStorage.getItem('hanif_user');
+                const forceLogout = localStorage.getItem('hanif_force');
+                if (forceLogout === 'true') return null;
                 return saved ? JSON.parse(saved) : null;
             });
             const [selectedRole, setSelectedRole] = React.useState('zakir');
+            const [activeTab, setActiveTab] = React.useState('dashboard');
+
+            // Data States
+            const [orders, setOrders] = React.useState(() => {
+                const saved = localStorage.getItem('hanif_orders');
+                return saved ? JSON.parse(saved) : [
+                    { id: 'MEMO-1001', customer: 'আলমগীর হোসেন', phone: '01711000000', address: 'মিরপুর, ঢাকা', product: 'হানিফ সেগুন ডোর', qty: 4, total: 48000, advance: 10000, due: 38000, status: 'প্রোডাকশনে আছে' }
+                ];
+            });
+
+            const [productionLogs, setProductionLogs] = React.useState(() => {
+                const saved = localStorage.getItem('hanif_prod');
+                return saved ? JSON.parse(saved) : [
+                    { id: 1, date: '২০২৬-১১-০৩', item: 'হানিফ পলিমার ডোর', qty: 40, status: 'স্টকভুক্ত', photo: null }
+                ];
+            });
+
+            React.useEffect(() => {
+                localStorage.setItem('hanif_orders', JSON.stringify(orders));
+            }, [orders]);
+
+            React.useEffect(() => {
+                localStorage.setItem('hanif_prod', JSON.stringify(productionLogs));
+            }, [productionLogs]);
+
+            const [newOrder, setNewOrder] = React.useState({ customer: '', phone: '', address: '', product: 'হানিফ পলিমার ডোর', qty: 1, price: 0, advance: 0 });
+            const [newProd, setNewProd] = React.useState({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
+            const [selectedChallan, setSelectedChallan] = React.useState(null);
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                let loggedUser = { name: selectedRole, role: 'owner' };
+                localStorage.removeItem('hanif_force');
+                let loggedUser = {};
                 if (selectedRole === 'zakir') loggedUser = { name: 'জাকির হোসেন (ম্যানেজিং ডিরেক্টর)', role: 'owner' };
                 else if (selectedRole === 'hriday') loggedUser = { name: 'রফিকুল ইসলাম হৃদয় (পরিচালক)', role: 'owner' };
                 else if (selectedRole === 'jiban') loggedUser = { name: 'আবু সাকের জীবন (পরিচালক)', role: 'owner' };
@@ -55,6 +86,59 @@
             const handleLogout = () => {
                 setUser(null);
                 localStorage.removeItem('hanif_user');
+            };
+
+            const handleMasterLogout = () => {
+                if(confirm('সবার অ্যাকাউন্ট লগআউট করতে চান?')) {
+                    localStorage.setItem('hanif_force', 'true');
+                    localStorage.removeItem('hanif_user');
+                    setUser(null);
+                }
+            };
+
+            const handleCreateOrder = (e) => {
+                e.preventDefault();
+                const total = newOrder.qty * newOrder.price;
+                const due = total - newOrder.advance;
+                const orderObj = {
+                    id: `MEMO-${1000 + orders.length + 1}`,
+                    customer: newOrder.customer,
+                    phone: newOrder.phone,
+                    address: newOrder.address,
+                    product: newOrder.product,
+                    qty: newOrder.qty,
+                    total: total,
+                    advance: newOrder.advance,
+                    due: due,
+                    status: 'প্রোডাকশনে আছে'
+                };
+                setOrders([...orders, orderObj]);
+                setNewOrder({ customer: '', phone: '', address: '', product: 'হানিফ পলিমার ডোর', qty: 1, price: 0, advance: 0 });
+                alert('নতুন মেমো সফলভাবে সংরক্ষিত হয়েছে!');
+            };
+
+            const handlePhotoCapture = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setNewProd({...newProd, photo: reader.result});
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleAddProduction = (e) => {
+                e.preventDefault();
+                if(!newProd.qty) return;
+                setProductionLogs([...productionLogs, {
+                    id: productionLogs.length + 1,
+                    date: new Date().toLocaleDateString('bn-BD'),
+                    item: newProd.item,
+                    qty: Number(newProd.qty),
+                    status: newProd.note || 'স্টক আপডেট',
+                    photo: newProd.photo
+                }]);
+                setNewProd({ item: 'হানিফ পলিমার ডোর', qty: '', note: '', photo: null });
+                alert('প্রোডাকশন স্টক আপডেট হয়েছে!');
             };
 
             if (!user) {
@@ -94,25 +178,114 @@
 
             return (
                 <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-                    <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center">
+                    <header className="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-50">
                         <div>
                             <h1 className="font-bold text-emerald-400">হানিফ ডোর - জাকির লিমিটেড</h1>
                             <p className="text-xs text-slate-400">ব্যবহারকারী: {user.name}</p>
                         </div>
-                        <button onClick={handleLogout} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
-                            লগআউট
-                        </button>
-                    </header>
-                    <main className="p-4 flex-1 max-w-7xl w-full mx-auto">
-                        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
-                            <h2 className="text-lg font-bold text-emerald-400">ড্যাশবোর্ড সফলভাবে সচল রয়েছে</h2>
-                            <p className="text-sm text-slate-400">আপনার সিস্টেম এখন সম্পূর্ণ প্রস্তুত।</p>
+                        <div className="flex gap-2">
+                            {user.role === 'owner' && (
+                                <button onClick={handleMasterLogout} className="bg-amber-600/20 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                    🔴 সবার লগআউট
+                                </button>
+                            )}
+                            <button onClick={handleLogout} className="bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-medium">
+                                লগআউট
+                            </button>
                         </div>
+                    </header>
+
+                    {/* Navigation Tabs */}
+                    <nav className="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-sm">
+                        <button onClick={() => setActiveTab('dashboard')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>ড্যাশবোর্ড</button>
+                        <button onClick={() => setActiveTab('orders')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'orders' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>মেমো ও চালান</button>
+                        <button onClick={() => setActiveTab('production')} className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'production' ? 'bg-emerald-600 text-white' : 'text-slate-400'}`}>প্রোডাকশন ও ক্যামেরা</button>
+                    </nav>
+
+                    <main className="p-4 flex-1 max-w-7xl w-full mx-auto space-y-4">
+                        {activeTab === 'dashboard' && (
+                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-2">
+                                <h2 className="text-lg font-bold text-emerald-400">ড্যাশবোর্ড ও সামারি</h2>
+                                <p className="text-sm text-slate-400">মোট অর্ডার: {orders.length} টি | প্রোডাকশন লগ: {productionLogs.length} টি</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'orders' && (
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                                    <h2 className="text-lg font-bold text-emerald-400 mb-4">নতুন মেমো তৈরি করুন</h2>
+                                    <form onSubmit={handleCreateOrder} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <input type="text" required placeholder="গ্রাহকের নাম" value={newOrder.customer} onChange={(e) => setNewOrder({...newOrder, customer: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="text" required placeholder="মোবাইল নম্বর" value={newOrder.phone} onChange={(e) => setNewOrder({...newOrder, phone: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="text" required placeholder="ঠিকানা" value={newOrder.address} onChange={(e) => setNewOrder({...newOrder, address: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="text" required placeholder="পণ্যের বিবরণ" value={newOrder.product} onChange={(e) => setNewOrder({...newOrder, product: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="number" required placeholder="পরিমাণ" value={newOrder.qty} onChange={(e) => setNewOrder({...newOrder, qty: Number(e.target.value)})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="number" required placeholder="প্রতি পিস মূল্য" value={newOrder.price} onChange={(e) => setNewOrder({...newOrder, price: Number(e.target.value)})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="number" placeholder="অ্যাডভান্স টাকা" value={newOrder.advance} onChange={(e) => setNewOrder({...newOrder, advance: Number(e.target.value)})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <div className="md:col-span-3 flex justify-end">
+                                            <button type="submit" className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-semibold">মেমো সেভ করুন</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3">
+                                    <h2 className="text-lg font-bold text-emerald-400">সকল মেমো তালিকা</h2>
+                                    {orders.map(ord => (
+                                        <div key={ord.id} className="bg-slate-800 p-4 rounded-xl flex justify-between items-center text-sm">
+                                            <div>
+                                                <p className="font-bold text-white">{ord.id} - {ord.customer} ({ord.phone})</p>
+                                                <p className="text-xs text-slate-400">পণ্য: {ord.product} x {ord.qty} | বকেয়া: ৳ {ord.due}</p>
+                                            </div>
+                                            <button onClick={() => { setSelectedChallan(ord); setTimeout(() => window.print(), 300); }} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">🖨️ প্রিন্ট চালান</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'production' && (
+                            <div className="space-y-6">
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+                                    <h2 className="text-lg font-bold text-emerald-400 mb-4">প্রোডাকশন ও ক্যামেরা এন্ট্রি</h2>
+                                    <form onSubmit={handleAddProduction} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <select value={newProd.item} onChange={(e) => setNewProd({...newProd, item: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white">
+                                            <option>হানিফ পলিমার ডোর</option>
+                                            <option>হানিফ সেগুন ডোর</option>
+                                        </select>
+                                        <input type="number" required placeholder="পরিমাণ (পিস)" value={newProd.qty} onChange={(e) => setNewProd({...newProd, qty: e.target.value})} className="bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white" />
+                                        <input type="file" accept="image/*" capture="environment" onChange={handlePhotoCapture} className="bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-300 file:bg-emerald-600 file:text-white file:border-0 file:py-1 file:px-3 file:rounded" />
+                                        <div className="md:col-span-3 flex justify-end">
+                                            <button type="submit" className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-semibold">স্টক সেভ করুন</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-3">
+                                    <h2 className="text-lg font-bold text-emerald-400">স্টক লগ</h2>
+                                    {productionLogs.map(p => (
+                                        <div key={p.id} className="bg-slate-800 p-3 rounded-lg flex items-center gap-4 text-xs">
+                                            {p.photo && <img src={p.photo} className="w-12 h-12 object-cover rounded" />}
+                                            <div>
+                                                <p className="font-bold text-white text-sm">{p.item} - {p.qty} পিস</p>
+                                                <p className="text-slate-400">{p.date}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </main>
+
+                    {selectedChallan && (
+                        <div className="hidden">
+                            <div className="p-8 text-black bg-white">
+                                <h1>হানিফ ডোর চালান - {selectedChallan.id}</h1>
+                                <p>গ্রাহক: {selectedChallan.customer}</p>
+                                <p>মোট: {selectedChallan.total} | বকেয়া: {selectedChallan.due}</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
-
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
