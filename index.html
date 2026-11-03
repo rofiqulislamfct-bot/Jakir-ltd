@@ -7,7 +7,14 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }</style>
+    <style>
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableMemo, #printableMemo * { visibility: visible; }
+            #printableMemo { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; }
+        }
+    </style>
 </head>
 <body class="min-h-screen flex flex-col">
     <div id="app" class="flex-1 flex flex-col"></div>
@@ -15,14 +22,18 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
-            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
-            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active' },
-            { id: 4, name: 'ফ্যাক্টরি ম্যানেজার', role: 'Manager', phone: '01700000004', code: '', email: 'manager@jakirltd.com', salary: 25000, snacks: 1500, fine: 0, isOwner: false, status: 'Active' }
+            { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' }
         ];
         let orders = JSON.parse(localStorage.getItem('hanif_orders')) || [];
+        let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
+            { id: 1, name: 'হানিফ পলিমার ডোর', stock: 25, buyPrice: 3500, sellPrice: 4500 },
+            { id: 2, name: 'মেলামাইন ডোর', stock: 12, buyPrice: 4000, sellPrice: 5200 }
+        ];
         let authMode = 'login'; // 'login', 'staff_reg', 'owner_reg'
         let activeTab = 'dashboard';
+        let currentMemo = null;
 
         function render() {
             const app = document.getElementById('app');
@@ -49,312 +60,4 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs text-slate-300 mb-1">সিকিউরিটি কোড (শুধু মালিকদের জন্য)</label>
-                                        <input type="password" id="loginCode" placeholder="কোড দিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
-                                    </div>
-                                    <button onclick="handleLogin()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm">প্রবেশ করুন</button>
-                                </div>
-                                <div class="text-[11px] text-slate-400 bg-slate-800/60 p-2.5 rounded space-y-1">
-                                    <p class="font-bold text-emerald-300">মালিক ডেমো লগইন:</p>
-                                    <p>• জাকির: 01700000001 (কোড: 7771)</p>
-                                    <p>• হৃদয়: 01700000002 (কোড: 7772)</p>
-                                    <p>• জীবন: 01700000003 (কোড: 7773)</p>
-                                </div>
-                            ` : ''}
-
-                            ${authMode === 'staff_reg' ? `
-                                <div class="space-y-3 text-xs">
-                                    <h2 class="font-bold text-emerald-400 text-center">নতুন কর্মী রেজিস্ট্রেশন</h2>
-                                    <div>
-                                        <label class="block text-slate-300 mb-1">পূর্ণ নাম</label>
-                                        <input type="text" id="regStaffName" placeholder="কর্মীর নাম লিখুন" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-300 mb-1">মোবাইল নম্বর (১১ ডিজিট)</label>
-                                        <input type="text" id="regStaffPhone" placeholder="017xxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    </div>
-                                    <button onclick="registerStaff()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg">রেজিস্ট্রেশন সম্পন্ন করুন</button>
-                                </div>
-                            ` : ''}
-
-                            ${authMode === 'owner_reg' ? `
-                                <div class="space-y-3 text-xs">
-                                    <h2 class="font-bold text-emerald-400 text-center">নতুন মালিক রেজিস্ট্রেশন</h2>
-                                    <div>
-                                        <label class="block text-slate-300 mb-1">মালিকের নাম</label>
-                                        <input type="text" id="regOwnerName" placeholder="নাম লিখুন" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-300 mb-1">মোবাইল নম্বর</label>
-                                        <input type="text" id="regOwnerPhone" placeholder="017xxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    </div>
-                                    <div>
-                                        <label class="block text-slate-300 mb-1">গোপন সিকিউরিটি কোড</label>
-                                        <input type="password" id="regOwnerCode" placeholder="কোড দিন" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    </div>
-                                    <button onclick="registerOwner()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg">মালিক অ্যাকাউন্ট তৈরি</button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            } else {
-                app.innerHTML = `
-                    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-50">
-                        <div>
-                            <h1 class="font-bold text-emerald-400 text-sm">হানিফ ডোর - জাকির লিমিটেড</h1>
-                            <p class="text-[11px] text-slate-400">ব্যবহারকারী: ${currentUser.name} (${currentUser.role})</p>
-                        </div>
-                        <div class="flex gap-2">
-                            ${currentUser.isOwner ? `<button onclick="handleMasterLogout()" class="bg-amber-600/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded text-[11px]">🔴 সবার লগআউট</button>` : ''}
-                            <button onclick="handleLogout()" class="bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-1 rounded text-[11px]">লগআউট</button>
-                        </div>
-                    </header>
-
-                    <nav class="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-xs">
-                        <button onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">ড্যাশবোর্ড</button>
-                        <button onclick="switchTab('profile')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'profile' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">প্রোফাইল</button>
-                        ${currentUser.isOwner ? `<button onclick="switchTab('owner_panel')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'owner_panel' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">👑 মালিক প্যানেল</button>` : ''}
-                        <button onclick="switchTab('orders')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'orders' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">মেমো</button>
-                    </nav>
-
-                    <main class="p-4 flex-1 max-w-4xl w-full mx-auto space-y-4 text-sm">
-                        ${activeTab === 'dashboard' ? `
-                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-2">
-                                <h2 class="font-bold text-emerald-400">স্বাগতম, ${currentUser.name}</h2>
-                                <p class="text-xs text-slate-400">পদবি: <span class="text-white">${currentUser.role}</span></p>
-                                <p class="text-xs text-emerald-300">সিস্টেম সফলভাবে সচল রয়েছে।</p>
-                            </div>
-                        ` : ''}
-
-                        ${activeTab === 'profile' ? `
-                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-2 max-w-xl text-xs">
-                                <h2 class="font-bold text-emerald-400 text-sm mb-2">ব্যক্তিগত বিবরণী</h2>
-                                <p>নাম: <strong class="text-white">${currentUser.name}</strong></p>
-                                <p>পদবি: <strong class="text-emerald-400">${currentUser.role}</strong></p>
-                                <p>ফোন: <strong class="text-white">${currentUser.phone}</strong></p>
-                                <p>বেতন: <strong class="text-emerald-400">৳ ${currentUser.salary || 0}</strong></p>
-                                <p>নাস্তা: <strong class="text-blue-400">৳ ${currentUser.snacks || 0}</strong></p>
-                                <p>ফাইন: <strong class="text-red-400">৳ ${currentUser.fine || 0}</strong></p>
-                            </div>
-                        ` : ''}
-
-                        ${currentUser.isOwner && activeTab === 'owner_panel' ? `
-                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4">
-                                <h2 class="font-bold text-emerald-400 text-sm">মালিক নিয়ন্ত্রণ প্যানেল (কর্মী কনফার্মেশন ও বেতন)</h2>
-                                <div class="space-y-3">
-                                    ${staffList.map(st => `
-                                        <div class="p-3 rounded-xl border ${st.status === 'Pending' ? 'bg-amber-950/20 border-amber-500/40' : 'bg-slate-800 border-slate-700'} space-y-2 text-xs">
-                                            <div class="flex justify-between items-center">
-                                                <div>
-                                                    <span class="font-bold text-white">${st.name}</span> (${st.role})
-                                                    ${st.status === 'Pending' ? '<span class="ml-2 bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded text-[10px]">অপেক্ষমাণ (Pending)</span>' : ''}
-                                                </div>
-                                                ${st.status === 'Pending' ? `<button onclick="confirmStaff(${st.id})" class="bg-emerald-600 text-white px-2.5 py-1 rounded">কনফার্ম করুন</button>` : ''}
-                                            </div>
-                                            <div class="grid grid-cols-3 gap-2">
-                                                <div>
-                                                    <label class="text-[10px] text-slate-400">বেতন</label>
-                                                    <input type="number" value="${st.salary}" onchange="updateStaff(${st.id}, 'salary', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
-                                                </div>
-                                                <div>
-                                                    <label class="text-[10px] text-slate-400">নাস্তা</label>
-                                                    <input type="number" value="${st.snacks}" onchange="updateStaff(${st.id}, 'snacks', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-white">
-                                                </div>
-                                                <div>
-                                                    <label class="text-[10px] text-slate-400">ফাইন</label>
-                                                    <input type="number" value="${st.fine}" onchange="updateStaff(${st.id}, 'fine', this.value)" class="w-full bg-slate-900 border border-slate-700 rounded p-1 text-red-400">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        ${activeTab === 'orders' ? `
-                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 text-xs">
-                                <h2 class="font-bold text-emerald-400 text-sm">নতুন মেমো তৈরি করুন</h2>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <input type="text" id="custName" placeholder="গ্রাহকের নাম" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    <input type="text" id="custPhone" placeholder="মোবাইল নম্বর" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    <input type="text" id="prodName" placeholder="পণ্যের বিবরণ" value="হানিফ পলিমার ডোর" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    <input type="number" id="prodQty" placeholder="পরিমাণ" value="1" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    <input type="number" id="prodPrice" placeholder="প্রতি পিস মূল্য" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                    <input type="number" id="prodAdvance" placeholder="অ্যাডভান্স টাকা" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
-                                </div>
-                                <button onclick="createOrder()" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold w-full">মেমো সেভ করুন</button>
-                                <div class="space-y-2 mt-4">
-                                    <h3 class="font-bold text-slate-300">সংরক্ষিত মেমোগুলো:</h3>
-                                    ${orders.length === 0 ? '<p class="text-slate-500">কোনো মেমো নেই</p>' : orders.map(o => `
-                                        <div class="bg-slate-800 p-2.5 rounded flex justify-between items-center">
-                                            <div>
-                                                <p class="font-bold text-white">${o.id} - ${o.customer} (${o.phone})</p>
-                                                <p class="text-slate-400">পণ্য: ${o.product} x ${o.qty} | বকেয়া: ৳ ${o.due}</p>
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
-                    </main>
-                `;
-            }
-        }
-
-        function switchAuth(mode) {
-            authMode = mode;
-            render();
-        }
-
-        function handleLogin() {
-            const phone = document.getElementById('loginPhone').value.trim();
-            const code = document.getElementById('loginCode').value.trim();
-            const found = staffList.find(s => s.phone === phone);
-
-            if (found) {
-                if (found.status === 'Pending') {
-                    alert('আপনার অ্যাকাউন্টটি এখনও মালিক কর্তৃক কনফার্ম করা হয়নি!');
-                    return;
-                }
-                if (found.isOwner && found.code !== code) {
-                    alert('ভুল সিকিউরিটি কোড!');
-                    return;
-                }
-                currentUser = found;
-                localStorage.setItem('hanif_user', JSON.stringify(currentUser));
-                render();
-            } else {
-                alert('এই নম্বর দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি!');
-            }
-        }
-
-        function registerStaff() {
-            const name = document.getElementById('regStaffName').value.trim();
-            const phone = document.getElementById('regStaffPhone').value.trim();
-
-            if (!name || !phone || phone.length !== 11) {
-                alert('সঠিক নাম ও ১১ ডিজিটের মোবাইল নম্বর দিন!');
-                return;
-            }
-            if (staffList.some(s => s.phone === phone)) {
-                alert('এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে!');
-                return;
-            }
-
-            const newStaff = {
-                id: staffList.length + 1,
-                name: name,
-                role: 'সাধারণ কর্মী',
-                phone: phone,
-                code: '',
-                email: 'N/A',
-                salary: 0,
-                snacks: 0,
-                fine: 0,
-                isOwner: false,
-                status: 'Pending'
-            };
-
-            staffList.push(newStaff);
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('কর্মী রেজিস্ট্রেশন সফল হয়েছে! মালিক প্যানেল থেকে কনফার্ম করার পর লগইন করতে পারবেন।');
-            authMode = 'login';
-            render();
-        }
-
-        function registerOwner() {
-            const name = document.getElementById('regOwnerName').value.trim();
-            const phone = document.getElementById('regOwnerPhone').value.trim();
-            const code = document.getElementById('regOwnerCode').value.trim();
-
-            if (!name || !phone || !code || phone.length !== 11) {
-                alert('সব তথ্য সঠিকভাবে পূরণ করুন!');
-                return;
-            }
-            if (staffList.some(s => s.phone === phone)) {
-                alert('এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে!');
-                return;
-            }
-
-            const newOwner = {
-                id: staffList.length + 1,
-                name: name,
-                role: 'মালিক (Director)',
-                phone: phone,
-                code: code,
-                email: 'N/A',
-                salary: 0,
-                snacks: 0,
-                fine: 0,
-                isOwner: true,
-                status: 'Active'
-            };
-
-            staffList.push(newOwner);
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('মালিক অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে! এখন কোড দিয়ে লগইন করুন।');
-            authMode = 'login';
-            render();
-        }
-
-        function confirmStaff(id) {
-            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active'} : s);
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('কর্মীর অ্যাকাউন্ট সফলভাবে সচল করা হয়েছে!');
-            render();
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('hanif_user');
-            currentUser = null;
-            render();
-        }
-
-        function handleMasterLogout() {
-            if(confirm('সবার অ্যাকাউন্ট লগআউট করতে চান?')) {
-                localStorage.removeItem('hanif_user');
-                currentUser = null;
-                render();
-            }
-        }
-
-        function switchTab(tab) {
-            activeTab = tab;
-            render();
-        }
-
-        function updateStaff(id, field, val) {
-            staffList = staffList.map(s => s.id === id ? {...s, [field]: Number(val)} : s);
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-        }
-
-        function createOrder() {
-            const customer = document.getElementById('custName').value;
-            const phone = document.getElementById('custPhone').value;
-            const product = document.getElementById('prodName').value;
-            const qty = Number(document.getElementById('prodQty').value);
-            const price = Number(document.getElementById('prodPrice').value);
-            const advance = Number(document.getElementById('prodAdvance').value);
-
-            if(!customer || !phone || !price) {
-                alert('অনুগ্রহ করে প্রয়োজনীয় তথ্যগুলো পূরণ করুন!');
-                return;
-            }
-
-            const total = qty * price;
-            const due = total - advance;
-            const newOrd = {
-                id: `MEMO-${1000 + orders.length + 1}`,
-                customer, phone, product, qty, total, advance, due
-            };
-
-            orders.push(newOrd);
-            localStorage.setItem('hanif_orders', JSON.stringify(orders));
-            alert('মেমো সফলভাবে সেভ হয়েছে!');
-            render();
-        }
-
-        render();
-    </script>
-</body>
-</html>
+                                        <input type="password" id="loginCode" placeholder="কোড দিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center
