@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>হানিফ ডোর - জাকির লিমিটেড</title>
+    
+    <!-- Firebase SDK (Modular v9/v10 CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #f8fafc; color: #1e293b; padding: 10px; }
@@ -24,16 +29,38 @@
     </style>
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app">
+        <div style="text-align:center; margin-top:50px;">
+            <h3>সিস্টেম লোড হচ্ছে...</h3>
+        </div>
+    </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfcJ8Jhn0éb-Bx_3dhI4TheIt8ppRE8S4",
+            authDomain: "jakir-ltd.firebaseapp.com",
+            databaseURL: "https://jakir-ltd-default-rtdb.firebaseio.com",
+            projectId: "jakir-ltd",
+            storageBucket: "jakir-ltd.appspot.com",
+            messagingSenderId: "235034327378",
+            appId: "1:235034327378:web:a3233b7fe27a2f9436a28b"
+        };
+
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+        } catch (e) {
+            console.log("Firebase Init Failed");
+        }
+
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
             { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, advance: 0 }
         ];
         let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
         let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [
-            { id: 1, text: 'হানিফ ডোর - জাকির লিমিটেডের পোর্টালে সবাইকে স্বাগতম!', date: 'আজ' }
+            { id: 1, text: 'হানিফ ডোর - জাকির লিমিটেডের লাইভ পোর্টালে সবাইকে স্বাগতম!', date: 'আজ' }
         ];
         let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
             { id: 1, name: 'প্লাস্টিক ডোর (মডেল এ)', stock: 25, price: 3500 },
@@ -43,13 +70,55 @@
         let authTab = 'login';
         let currentTab = 'home';
 
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'hanif_staff') staffList = JSON.parse(e.newValue) || staffList;
-            if (e.key === 'hanif_attendance') attendanceLogs = JSON.parse(e.newValue) || attendanceLogs;
-            if (e.key === 'hanif_notices') notices = JSON.parse(e.newValue) || notices;
-            if (e.key === 'hanif_inventory') inventory = JSON.parse(e.newValue) || inventory;
-            render();
-        });
+        // রিয়েল-টাইম ডাটা সিঙ্ক
+        function initRealtimeSync() {
+            if (!db) {
+                render();
+                return;
+            }
+
+            db.ref('staffList').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    staffList = snapshot.val();
+                    localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+                } else {
+                    db.ref('staffList').set(staffList);
+                }
+                render();
+            }, (error) => {
+                render();
+            });
+
+            db.ref('attendanceLogs').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    attendanceLogs = snapshot.val();
+                    localStorage.setItem('hanif_attendance', JSON.stringify(attendanceLogs));
+                    render();
+                }
+            });
+
+            db.ref('notices').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    notices = snapshot.val();
+                    localStorage.setItem('hanif_notices', JSON.stringify(notices));
+                    render();
+                }
+            });
+
+            db.ref('inventory').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    inventory = snapshot.val();
+                    localStorage.setItem('hanif_inventory', JSON.stringify(inventory));
+                    render();
+                }
+            });
+        }
+
+        function syncData(path, data) {
+            if (db) {
+                db.ref(path).set(data);
+            }
+        }
 
         function render() {
             const app = document.getElementById('app');
@@ -127,7 +196,7 @@
 
                             <div class="card">
                                 <h3>স্বাগতম, ${currentUser.name}!</h3>
-                                <p style="font-size: 12px; color: #64748b; margin-top: 5px;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম পুরোপুরি সচল রয়েছে।</p>
+                                <p style="font-size: 12px; color: #64748b; margin-top: 5px;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম লাইভ ক্লাউড মোডে সচল রয়েছে।</p>
                             </div>
                         </div>
                     ` : ''}
@@ -273,10 +342,9 @@
                 advance: 0
             });
 
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            syncData('staffList', staffList);
             alert('রেজিস্ট্রেশনের আবেদন সফলভাবে জমা হয়েছে!');
             setAuthTab('login');
-            render();
         }
 
         function approveStaff(id) {
@@ -285,9 +353,8 @@
             const tifInput = Number(document.getElementById(`tif_${id}`).value) || 0;
 
             staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', role: roleInput, salary: salInput, tiffin: tifInput} : s);
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            syncData('staffList', staffList);
             alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
-            render();
         }
 
         function giveAdvance(id) {
@@ -295,9 +362,8 @@
             if (amt <= 0) { alert('সঠিক পরিমাণ টাকা লিখুন!'); return; }
 
             staffList = staffList.map(s => s.id === id ? {...s, advance: (s.advance || 0) + amt} : s);
-            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            syncData('staffList', staffList);
             alert('অগ্রিম লোন সফলভাবে যুক্ত করা হয়েছে!');
-            render();
         }
 
         function addInventory() {
@@ -307,9 +373,8 @@
 
             if (!name) { alert('পণ্যের নাম দিন!'); return; }
             inventory.push({ id: Date.now(), name, stock, price });
-            localStorage.setItem('hanif_inventory', JSON.stringify(inventory));
+            syncData('inventory', inventory);
             alert('নতুন পণ্য স্টকে যুক্ত হয়েছে!');
-            render();
         }
 
         function postNotice() {
@@ -317,9 +382,8 @@
             if (!text) { alert('নোটিশের লেখা লিখুন!'); return; }
             
             notices.unshift({ id: Date.now(), text: text, date: new Date().toLocaleDateString('bn-BD') });
-            localStorage.setItem('hanif_notices', JSON.stringify(notices));
+            syncData('notices', notices);
             alert('নোটিশ প্রকাশিত হয়েছে!');
-            render();
         }
 
         function exportToCSV() {
@@ -348,13 +412,12 @@
                     type: type,
                     time: now
                 });
-                localStorage.setItem('hanif_attendance', JSON.stringify(attendanceLogs));
+                syncData('attendanceLogs', attendanceLogs);
                 alert(type + ' সফল হয়েছে!');
-                render();
             }, () => { alert('দয়া করে জিপিএস লোকেশন পারমিশন অন করুন!'); });
         }
 
-        render();
+        initRealtimeSync();
     </script>
 </body>
 </html>
