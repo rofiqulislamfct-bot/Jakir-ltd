@@ -10,7 +10,6 @@
         .card { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
         .btn { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .btn-red { background: #dc2626; }
-        .btn-blue { background: #2563eb; }
         .btn-sub { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 12px; cursor: pointer; position: relative; }
         .btn-sub.active { background: #059669; color: white; }
         .badge { background: #dc2626; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; }
@@ -23,21 +22,14 @@
 
     <script>
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
-        
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, avatar: '' },
-            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', salary: 0, avatar: '' },
-            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', salary: 0, avatar: '' }
+            { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, avatar: '' }
         ];
-
-        let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
         let authTab = 'login';
         let currentTab = 'home';
 
         function render() {
             const app = document.getElementById('app');
-            
-            // অপেক্ষমাণ (Pending) কর্মীর সংখ্যা গণনা করা
             const pendingCount = staffList.filter(s => s.status === 'Pending').length;
 
             if (!currentUser) {
@@ -55,7 +47,7 @@
                             <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
                             <input type="text" id="loginPhone" placeholder="017xxxxxxxx">
                             <label style="font-size: 12px; font-weight: bold;">সিকিউরিটি কোড (শুধু মালিকের জন্য)</label>
-                            <input type="password" id="loginCode" placeholder="কোড দিন (কর্মী হলে খালি রাখুন)">
+                            <input type="password" id="loginCode" placeholder="কোড দিন">
                             <button onclick="login()" class="btn">প্রবেশ করুন</button>
                             <div style="font-size: 11px; color: #64748b; margin-top: 10px; background: #f1f5f9; padding: 8px; border-radius: 5px;">
                                 <strong>মালিক ডেমো নম্বর:</strong> 01700000001 (কোড: 7771)
@@ -66,7 +58,6 @@
                             <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
                             <input type="text" id="regPhone" placeholder="017xxxxxxxx">
                             <button onclick="registerStaff()" class="btn">রেজিস্ট্রেশনের আবেদন পাঠান</button>
-                            <p style="font-size: 11px; color: #dc2626; margin-top: 8px;">* আবেদন করার পর মালিক অনুমোদন দিলে এবং পদবি ও বেতন নির্ধারণ করলে আপনি লগইন করতে পারবেন।</p>
                         `}
                     </div>
                 `;
@@ -83,7 +74,6 @@
                     <div class="nav">
                         <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
                         <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল</button>
-                        <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 হাজিরা</button>
                         ${currentUser.isOwner ? `
                             <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">
                                 👑 মালিক প্যানেল
@@ -95,40 +85,23 @@
                     ${currentTab === 'home' ? `
                         <div class="card">
                             <h3>স্বাগতম, ${currentUser.name}!</h3>
-                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম সফলভাবে সচল রয়েছে।</p>
+                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">সিস্টেম সফলভাবে সচল রয়েছে।</p>
                         </div>
                     ` : ''}
 
                     ${currentTab === 'profile' ? `
                         <div class="card">
                             <h3>আপনার প্রোফাইল</h3>
-                            <div style="text-align: center; margin: 15px 0;">
-                                <div style="width: 70px; height: 70px; background: #e2e8f0; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden;">
-                                    ${currentUser.avatar ? `<img src="${currentUser.avatar}" style="width:100%; height:100%; object-fit:cover;">` : '👤'}
-                                </div>
-                                <input type="file" accept="image/*" onchange="uploadAvatar(event)" style="margin-top: 10px; font-size: 11px;">
-                            </div>
-                            <p style="font-size: 13px;"><strong>নাম:</strong> ${currentUser.name}</p>
+                            <p style="font-size: 13px; margin-top: 5px;"><strong>নাম:</strong> ${currentUser.name}</p>
                             <p style="font-size: 13px;"><strong>পদবি:</strong> ${currentUser.role}</p>
                             <p style="font-size: 13px;"><strong>মোবাইল:</strong> ${currentUser.phone}</p>
                             <p style="font-size: 13px;"><strong>মাসিক বেতন:</strong> ৳${currentUser.salary || 0}</p>
                         </div>
                     ` : ''}
 
-                    ${currentTab === 'attendance' ? `
-                        <div class="card">
-                            <h3>রিয়েল-টাইম ক্যামেরা হাজিরা</h3>
-                            <input type="file" accept="image/*" capture="user" id="attPhoto" style="font-size: 11px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
-                                <button onclick="recordAttendance('Check-In')" class="btn">🟢 চেক-ইন</button>
-                                <button onclick="recordAttendance('Check-Out')" class="btn btn-red">🔴 চেক-আউট</button>
-                            </div>
-                        </div>
-                    ` : ''}
-
                     ${currentUser.isOwner && currentTab === 'owner' ? `
                         <div class="card">
-                            <h3>মালিক প্যানেল (কর্মী অনুমোদন ও পদবি/বেতন নির্ধারণ)</h3>
+                            <h3>মালিক প্যানেল (কর্মী অনুমোদন ও বেতন নির্ধারণ)</h3>
                             ${staffList.map(s => `
                                 <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
                                     <p><strong>নাম:</strong> ${s.name} | ফোন: ${s.phone}</p>
@@ -187,7 +160,7 @@
             });
 
             localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('আপনার রেজিস্ট্রেশন আবেদন সফলভাবে জমা হয়েছে! মালিক প্যানেলে নোটিফিকেশন চলে গেছে।');
+            alert('রেজিস্ট্রেশন আবেদন সফলভাবে জমা হয়েছে! মালিক প্যানেলে নোটিফিকেশন চলে গেছে।');
             setAuthTab('login');
             render();
         }
@@ -203,28 +176,6 @@
         }
 
         function logout() { localStorage.removeItem('hanif_user'); currentUser = null; render(); }
-
-        function uploadAvatar(event) {
-            const file = event.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentUser.avatar = e.target.result;
-                    staffList = staffList.map(s => s.id === currentUser.id ? currentUser : s);
-                    localStorage.setItem('hanif_user', JSON.stringify(currentUser));
-                    localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-                    render();
-                }
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function recordAttendance(type) {
-            if (!navigator.geolocation) { alert('লোকেশন সমর্থিত নয়!'); return; }
-            navigator.geolocation.getCurrentPosition(() => {
-                alert(type + ' সফল হয়েছে!');
-            }, () => { alert('দয়া করে জিপিএস লোকেশন পারমিশন অন করুন!'); });
-        }
 
         render();
     </script>
