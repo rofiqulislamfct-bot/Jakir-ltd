@@ -4,60 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>হানিফ ডোর - জাকির লিমিটেড</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }
-        @media print {
-            body * { visibility: hidden; }
-            #printableMemo, #printableMemo * { visibility: visible; }
-            #printableMemo { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; }
-        }
-    </style>
+    <style>body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }</style>
 </head>
-<body class="min-h-screen flex flex-col">
-    <div id="app" class="flex-1 flex flex-col"></div>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4 text-center shadow-2xl">
+        <h1 class="text-xl font-bold text-emerald-400">হানিফ ডোর</h1>
+        <p class="text-xs text-slate-400">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
+        <div class="bg-slate-800 p-4 rounded-xl text-left space-y-2 text-xs">
+            <p class="text-emerald-300 font-bold">মালিক ডেমো লগইন:</p>
+            <p>• জাকির: 01700000001 (কোড: 7771)</p>
+            <p>• হৃদয়: 01700000002 (কোড: 7772)</p>
+            <p>• জীবন: 01700000003 (কোড: 7773)</p>
+        </div>
+        <input type="text" id="phone" placeholder="মোবাইল নম্বর দিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
+        <input type="password" id="code" placeholder="সিকিউরিটি কোড (যদি মালিক হন)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
+        <button onclick="login()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm">প্রবেশ করুন</button>
+    </div>
 
     <script>
-        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
-        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', email: 'zakir@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' },
-            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', email: 'hriday@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' },
-            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', email: 'jiban@jakirltd.com', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' }
-        ];
-        let orders = JSON.parse(localStorage.getItem('hanif_orders')) || [];
-        let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
-            { id: 1, name: 'হানিফ পলিমার ডোর', stock: 25, buyPrice: 3500, sellPrice: 4500 },
-            { id: 2, name: 'মেলামাইন ডোর', stock: 12, buyPrice: 4000, sellPrice: 5200 }
-        ];
-        let authMode = 'login'; // 'login', 'staff_reg', 'owner_reg'
-        let activeTab = 'dashboard';
-        let currentMemo = null;
-
-        function render() {
-            const app = document.getElementById('app');
-            if (!currentUser) {
-                app.innerHTML = `
-                    <div class="min-h-screen flex items-center justify-center p-4">
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4 shadow-2xl">
-                            <div class="text-center">
-                                <h1 class="text-xl font-bold text-emerald-400">হানিফ ডোর</h1>
-                                <p class="text-xs text-slate-400">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
-                            </div>
-
-                            <div class="grid grid-cols-3 gap-1 bg-slate-800 p-1 rounded-xl text-[11px] font-semibold text-center">
-                                <button onclick="switchAuth('login')" class="py-2 rounded-lg ${authMode === 'login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">লগইন</button>
-                                <button onclick="switchAuth('staff_reg')" class="py-2 rounded-lg ${authMode === 'staff_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">কর্মী রেজি.</button>
-                                <button onclick="switchAuth('owner_reg')" class="py-2 rounded-lg ${authMode === 'owner_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">মালিক রেজি.</button>
-                            </div>
-
-                            ${authMode === 'login' ? `
-                                <div class="space-y-3">
-                                    <div>
-                                        <label class="block text-xs text-slate-300 mb-1">মোবাইল নম্বর</label>
-                                        <input type="text" id="loginPhone" placeholder="017xxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-slate-300 mb-1">সিকিউরিটি কোড (শুধু মালিকদের জন্য)</label>
-                                        <input type="password" id="loginCode" placeholder="কোড দিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center
+        function login() {
+            const p = document.getElementById('phone').value.trim();
+            if(p === '01700000001' || p === '01700000002' || p === '01700000003' || p.length === 11) {
+                alert('লগইন সফল হয়েছে! সিস্টেম সচল আছে।');
+            } else {
+                alert('সঠিক মোবাইল নম্বর দিন!');
+            }
+        }
+    </script>
+</body>
+</html>
