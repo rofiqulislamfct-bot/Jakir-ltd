@@ -135,7 +135,7 @@
                                 <button onclick="createOrder()" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold w-full">মেমো সেভ করুন</button>
                                 <div class="space-y-2 mt-4">
                                     <h3 class="font-bold text-slate-300">সংরক্ষিত মেমোগুলো:</h3>
-                                    ${orders.length === envList = '<p class="text-slate-500">কোনো মেমো নেই</p>' : orders.map(o => `
+                                    ${orders.length === 0 ? '<p class="text-slate-500">কোনো মেমো নেই</p>' : orders.map(o => `
                                         <div class="bg-slate-800 p-2.5 rounded flex justify-between items-center">
                                             <div>
                                                 <p class="font-bold text-white">${o.id} - ${o.customer} (${o.phone})</p>
