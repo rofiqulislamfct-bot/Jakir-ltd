@@ -29,9 +29,9 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, snacks: 0, fine: 0, avatar: '' },
-            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', salary: 0, snacks: 0, fine: 0, avatar: '' },
-            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', salary: 0, snacks: 0, fine: 0, avatar: '' }
+            { id: 1, name: 'জাকির হোসেন', role: 'মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, snacks: 0, fine: 0 },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', salary: 0, snacks: 0, fine: 0 },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', salary: 0, snacks: 0, fine: 0 }
         ];
         let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
             { id: 1, name: 'হানিফ পলিমার ডোর', stock: 25, buyPrice: 3500, sellPrice: 4500 },
@@ -90,4 +90,72 @@
                                     <label style="font-size: 12px;">মোবাইল নম্বর</label>
                                     <input type="text" id="regOwnerPhone" placeholder="017xxxxxxxx">
                                     <label style="font-size: 12px;">সিকিউরিটি কোড</label>
-                                    <input type="password"
+                                    <input type="password" id="regOwnerCode" placeholder="কোড দিন">
+                                    <button onclick="regOwner()" class="btn">মালিক একাউন্ট তৈরি</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                app.innerHTML = `
+                    <div class="header">
+                        <div>
+                            <h3 class="text-green" style="font-size: 14px;">Jakir - ltd</h3>
+                            <p style="font-size: 11px;" class="text-gray">${currentUser.name} (${currentUser.role})</p>
+                        </div>
+                        <button onclick="logout()" class="btn btn-red" style="width: auto; font-size: 11px; padding: 6px 10px;">লগআউট</button>
+                    </div>
+
+                    <div class="nav">
+                        <button onclick="setTab('dashboard')" class="btn-sub ${currentTab==='dashboard'?'active':''}">ড্যাশবোর্ড</button>
+                        <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">প্রোফাইল</button>
+                        <button onclick="setTab('inventory')" class="btn-sub ${currentTab==='inventory'?'active':''}">📦 স্টক</button>
+                        <button onclick="setTab('orders')" class="btn-sub ${currentTab==='orders'?'active':''}">মেমো</button>
+                        ${currentUser.isOwner ? `
+                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">👑 মালিক প্যানেল</button>
+                            <button onclick="setTab('reports')" class="btn-sub ${currentTab==='reports'?'active':''}">📊 রিপোর্ট</button>
+                        ` : ''}
+                    </div>
+
+                    <div style="padding: 16px; max-width: 600px; margin: 0 auto; width: 100%;">
+                        ${currentTab === 'dashboard' ? `
+                            <div class="card">
+                                <h3 class="text-green">স্বাগতম, ${currentUser.name}!</h3>
+                                <p style="font-size: 12px; margin-top: 4px;" class="text-gray">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম সচল রয়েছে।</p>
+                                <div class="grid-2" style="margin-top: 12px;">
+                                    <div style="background: #0f172a; padding: 10px; border-radius: 8px;">
+                                        <p style="font-size: 11px;" class="text-gray">মোট মেমো</p>
+                                        <h2 style="font-size: 18px;">${orders.length} টি</h2>
+                                    </div>
+                                    <div style="background: #0f172a; padding: 10px; border-radius: 8px;">
+                                        <p style="font-size: 11px;" class="text-gray">স্টক আইটেম</p>
+                                        <h2 class="text-green" style="font-size: 18px;">${inventory.length} প্রকার</h2>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'profile' ? `
+                            <div class="card">
+                                <h3>ব্যক্তিগত প্রোফাইল</h3>
+                                <p style="font-size: 13px; margin-top: 8px;">নাম: <strong>${currentUser.name}</strong></p>
+                                <p style="font-size: 13px;">পদবি: <strong class="text-green">${currentUser.role}</strong></p>
+                                <p style="font-size: 13px;">ফোন: <strong>${currentUser.phone}</strong></p>
+                                <p style="font-size: 13px;">বেতন: <strong>৳${currentUser.salary || 0}</strong></p>
+                                <p style="font-size: 13px;">নাস্তা: <strong>৳${currentUser.snacks || 0}</strong></p>
+                                <p style="font-size: 13px;">ফাইন: <strong class="text-red">৳${currentUser.fine || 0}</strong></p>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'inventory' ? `
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h3>স্টক ইনভেন্টরি</h3>
+                                    ${currentUser.isOwner ? `<button onclick="addProduct()" class="btn" style="width: auto; font-size: 11px;">+ নতুন মাল</button>` : ''}
+                                </div>
+                                ${inventory.map(i => `
+                                    <div style="background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong>${i.name}</strong>
+                                            <p
