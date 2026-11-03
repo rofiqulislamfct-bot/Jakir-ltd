@@ -11,10 +11,11 @@
         .btn { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .btn-red { background: #dc2626; }
         .btn-blue { background: #2563eb; }
+        .btn-whatsapp { background: #25d366; }
         .btn-sub { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 12px; cursor: pointer; position: relative; white-space: nowrap; }
         .btn-sub.active { background: #059669; color: white; }
         .badge { background: #dc2626; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #cbd5e1; border-radius: 5px; }
+        input, select { width: 100%; padding: 8px; margin: 4px 0 8px 0; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12px; }
         .nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; }
     </style>
 </head>
@@ -24,10 +25,11 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, avatar: '' }
+            { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, avatar: '' }
         ];
         let authTab = 'login';
         let currentTab = 'home';
+        let lastRegistered = null;
 
         function render() {
             const app = document.getElementById('app');
@@ -54,11 +56,20 @@
                                 <strong>মালিক ডেমো নম্বর:</strong> 01700000001 (কোড: 7771)
                             </div>
                         ` : `
-                            <label style="font-size: 12px; font-weight: bold;">আপনার পূর্ণ নাম</label>
-                            <input type="text" id="regName" placeholder="নাম লিখুন">
-                            <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
-                            <input type="text" id="regPhone" placeholder="017xxxxxxxx">
-                            <button onclick="registerStaff()" class="btn">রেজিস্ট্রেশনের আবেদন পাঠান</button>
+                            <div id="regFormArea">
+                                <label style="font-size: 12px; font-weight: bold;">আপনার পূর্ণ নাম</label>
+                                <input type="text" id="regName" placeholder="নাম লিখুন">
+                                <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                                <input type="text" id="regPhone" placeholder="017xxxxxxxx">
+                                <button onclick="registerStaff()" class="btn">রেজিস্ট্রেশনের আবেদন পাঠান</button>
+                            </div>
+                            
+                            ${lastRegistered ? `
+                                <div style="margin-top: 15px; padding: 10px; background: #ecfdf5; border: 1px solid #059669; border-radius: 6px; text-align: center;">
+                                    <p style="font-size: 12px; color: #065f46; margin-bottom: 8px;">আবেদন জমা হয়েছে! মালিককে হোয়াটসঅ্যাপে জানান:</p>
+                                    <button onclick="sendWhatsAppNotice()" class="btn btn-whatsapp">💬 মালিককে WhatsApp এ মেসেজ পাঠান</button>
+                                </div>
+                            ` : ''}
                         `}
                     </div>
                 `;
@@ -78,7 +89,7 @@
                         <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 ক্যামেরা হাজিরা</button>
                         ${currentUser.isOwner ? `
                             <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">
-                                👑 মালিক প্যানেল
+                                👑 কর্মী ম্যানেজমেন্ট ও বেতন
                                 ${pendingCount > 0 ? `<span class="badge">${pendingCount}</span>` : ''}
                             </button>
                         ` : ''}
@@ -87,13 +98,13 @@
                     ${currentTab === 'home' ? `
                         <div class="card">
                             <h3>স্বাগতম, ${currentUser.name}!</h3>
-                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">সিস্টেম সফলভাবে সচল রয়েছে। ওপরের মেনু থেকে প্রোফাইল, কল ও হাজিরা ব্যবহার করুন।</p>
+                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">সিস্টেম সফলভাবে সচল রয়েছে।</p>
                         </div>
                     ` : ''}
 
                     ${currentTab === 'profile' ? `
                         <div class="card">
-                            <h3>প্রোফাইল ছবি ও যোগাযোগ</h3>
+                            <h3>আপনার প্রোফাইল ও তথ্য</h3>
                             <div style="text-align: center; margin: 15px 0;">
                                 <div style="width: 70px; height: 70px; background: #e2e8f0; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden;">
                                     ${currentUser.avatar ? `<img src="${currentUser.avatar}" style="width:100%; height:100%; object-fit:cover;">` : '👤'}
@@ -104,6 +115,7 @@
                             <p style="font-size: 13px;"><strong>পদবি:</strong> ${currentUser.role}</p>
                             <p style="font-size: 13px;"><strong>মোবাইল:</strong> ${currentUser.phone}</p>
                             <p style="font-size: 13px;"><strong>মাসিক বেতন:</strong> ৳${currentUser.salary || 0}</p>
+                            <p style="font-size: 13px;"><strong>দৈনিক নাস্তা বিল:</strong> ৳${currentUser.tiffin || 0}</p>
 
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;">
                                 <button onclick="alert('অডিও কল কানেক্ট হচ্ছে...')" class="btn btn-blue">📞 অডিও কল</button>
@@ -125,18 +137,32 @@
 
                     ${currentUser.isOwner && currentTab === 'owner' ? `
                         <div class="card">
-                            <h3>মালিক প্যানেল (কর্মী অনুমোদন ও বেতন নির্ধারণ)</h3>
+                            <h3 style="color: #059669; margin-bottom: 10px;">👑 কর্মী ম্যানেজমেন্ট ও বেতন নির্ধারণ প্যানেল</h3>
+                            <p style="font-size: 11px; color: #64748b; margin-bottom: 10px;">নতুন কর্মীদের আবেদন চেক করুন এবং পদবি, বেতন ও নাস্তার টাকা নির্ধারণ করে অনুমোদন দিন।</p>
+                            
                             ${staffList.map(s => `
-                                <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
+                                <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
                                     <p><strong>নাম:</strong> ${s.name} | ফোন: ${s.phone}</p>
-                                    <p><strong>পদবি:</strong> ${s.role} | বেতন: ৳${s.salary || 0}</p>
+                                    <p><strong>পদবি:</strong> ${s.role} | বেতন: ৳${s.salary || 0} | নাস্তা: ৳${s.tiffin || 0}</p>
                                     <p><strong>স্ট্যাটাস:</strong> <span style="color:${s.status==='Active'?'green':'red'}">${s.status}</span></p>
                                     
                                     ${s.status === 'Pending' ? `
-                                        <div style="margin-top: 8px; display: flex; gap: 5px;">
-                                            <input type="text" id="role_${s.id}" placeholder="পদবি (যেমন: সেলসম্যান)" style="margin:0; font-size:11px;">
-                                            <input type="number" id="sal_${s.id}" placeholder="বেতন ৳" style="margin:0; font-size:11px; width:80px;">
-                                            <button onclick="approveStaff(${s.id})" class="btn" style="margin:0; padding:4px 8px; width:auto; font-size:11px;">অনুমোদন</button>
+                                        <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1;">
+                                            <label style="font-weight:bold; font-size:11px;">পদবি নির্ধারণ:</label>
+                                            <input type="text" id="role_${s.id}" placeholder="যেমন: সেলসম্যান / ম্যানেজার">
+                                            
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                                <div>
+                                                    <label style="font-weight:bold; font-size:11px;">মাসিক বেতন (৳):</label>
+                                                    <input type="number" id="sal_${s.id}" placeholder="বেতন">
+                                                </div>
+                                                <div>
+                                                    <label style="font-weight:bold; font-size:11px;">দৈনিক নাস্তা (৳):</label>
+                                                    <input type="number" id="tif_${s.id}" placeholder="নাস্তা বিল">
+                                                </div>
+                                            </div>
+                                            
+                                            <button onclick="approveStaff(${s.id})" class="btn" style="margin-top: 5px; padding: 8px; font-size: 12px;">✅ অনুমোদন ও সেট করুন</button>
                                         </div>
                                     ` : ''}
                                 </div>
@@ -147,7 +173,7 @@
             }
         }
 
-        function setAuthTab(t) { authTab = t; render(); }
+        function setAuthTab(t) { authTab = t; lastRegistered = null; render(); }
         function setTab(t) { currentTab = t; render(); }
 
         function login() {
@@ -180,22 +206,32 @@
                 isOwner: false,
                 status: 'Pending',
                 salary: 0,
+                tiffin: 0,
                 avatar: ''
             });
 
             localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('রেজিস্ট্রেশন আবেদন সফলভাবে জমা হয়েছে! মালিক প্যানেলে নোটিফিকেশন চলে গেছে।');
-            setAuthTab('login');
+            lastRegistered = { name, phone };
             render();
+        }
+
+        function sendWhatsAppNotice() {
+            if (!lastRegistered) return;
+            const ownerWhatsApp = "8801700000001"; // মালিকের নম্বর
+            const msg = encodeURIComponent(`আসসালামু আলাইকুম স্যার,\nআমি ${lastRegistered.name} (${lastRegistered.phone})। হানিফ ডোর অ্যাপে কর্মী হিসেবে রেজিস্ট্রেশনের আবেদন করেছি। দয়া করে প্যানেল থেকে পদবি ও বেতন নির্ধারণ করে অনুমোদন দিন।`);
+            window.open(`https://wa.me/${ownerWhatsApp}?text=${msg}`, '_blank');
+            lastRegistered = null;
+            setAuthTab('login');
         }
 
         function approveStaff(id) {
             const roleInput = document.getElementById(`role_${id}`).value.trim() || 'কর্মী';
             const salInput = Number(document.getElementById(`sal_${id}`).value) || 0;
+            const tifInput = Number(document.getElementById(`tif_${id}`).value) || 0;
 
-            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', role: roleInput, salary: salInput} : s);
+            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', role: roleInput, salary: salInput, tiffin: tifInput} : s);
             localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
+            alert('কর্মী সফলভাবে অনুমোদিত হয়েছে এবং বেতন ও নাস্তা নির্ধারণ করা হয়েছে!');
             render();
         }
 
