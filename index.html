@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -5,19 +6,310 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>হানিফ ডোর - জাকির লিমিটেড</title>
     <style>
-        body { background-color: #0f172a; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        .box { background: #1e293b; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 10px; border: 1px solid #334155; }
-        input { width: 90%; padding: 10px; margin: 8px 0; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 5px; }
-        button { background: #059669; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 95%; margin-top: 10px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+        .header { background: #0f172a; color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn { background: #059669; color: white; border: none; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; }
+        .btn-red { background: #dc2626; }
+        .btn-blue { background: #2563eb; }
+        .btn-sub { background: #e2e8f0; color: #475569; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-sub.active { background: #059669; color: white; }
+        input, select { width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; margin-top: 4px; margin-bottom: 10px; font-size: 14px; }
+        .nav { display: flex; gap: 6px; overflow-x: auto; padding: 10px; background: #e2e8f0; border-bottom: 1px solid #cbd5e1; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableMemo, #printableMemo * { visibility: visible; }
+            #printableMemo { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>হানিফ ডোর - জাকির লিমিটেড</h2>
-        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">ম্যানেজমেন্ট সিস্টেম</p>
-        <input type="text" id="phone" placeholder="মোবাইল নম্বর লিখুন">
-        <input type="password" id="code" placeholder="সিকিউরিটি কোড">
-        <button onclick="alert('সিস্টেম সফলভাবে চালু হয়েছে!')">প্রবেশ করুন</button>
-    </div>
+    <div id="app" style="width:100%; flex:1; display:flex; flex-direction:column;"></div>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
+        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
+            { id: 1, name: 'জাকির হোসেন', role: 'মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, snacks: 0 },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', salary: 0, snacks: 0 },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', salary: 0, snacks: 0 }
+        ];
+        let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
+            { id: 1, name: 'হানিফ পলিমার ডোর', stock: 25, buyPrice: 3500, sellPrice: 4500 },
+            { id: 2, name: 'মেলামাইন ডোর', stock: 12, buyPrice: 4000, sellPrice: 5200 }
+        ];
+        let orders = JSON.parse(localStorage.getItem('hanif_orders')) || [];
+        let authTab = 'login';
+        let currentTab = 'dashboard';
+        let currentMemo = null;
+
+        function render() {
+            const app = document.getElementById('app');
+            if (!currentUser) {
+                app.innerHTML = `
+                    <div style="max-width: 400px; margin: 30px auto; padding: 16px; width: 100%;">
+                        <div class="card" style="text-align: center;">
+                            <h2 style="color: #059669; margin-bottom: 2px;">Jakir - ltd</h2>
+                            <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Hanif door management</p>
+
+                            <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                                <button onclick="setAuthTab('login')" class="btn-sub ${authTab==='login'?'active':''}" style="flex:1;">লগইন</button>
+                                <button onclick="setAuthTab('staff_reg')" class="btn-sub ${authTab==='staff_reg'?'active':''}" style="flex:1;">কর্মী রেজি.</button>
+                                <button onclick="setAuthTab('owner_reg')" class="btn-sub ${authTab==='owner_reg'?'active':''}" style="flex:1;">মালিক রেজি.</button>
+                            </div>
+
+                            ${authTab === 'login' ? `
+                                <div style="text-align: left;">
+                                    <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                                    <input type="text" id="phone" placeholder="017xxxxxxxx">
+                                    <label style="font-size: 12px; font-weight: bold;">সিকিউরিটি কোড (মালিকের জন্য)</label>
+                                    <input type="password" id="code" placeholder="কোড দিন">
+                                    <button onclick="login()" class="btn">প্রবেশ করুন</button>
+                                </div>
+                                <div style="font-size: 11px; margin-top: 12px; background: #f1f5f9; padding: 10px; border-radius: 6px; text-align: left; color: #475569;">
+                                    <strong style="color: #059669;">ডেমো মালিক কোড:</strong><br>
+                                    • জাকির: 01700000001 (কোড: 7771)<br>
+                                    • হৃদয়: 01700000002 (কোড: 7772)<br>
+                                    • জীবন: 01700000003 (কোড: 7773)
+                                </div>
+                            ` : ''}
+
+                            ${authTab === 'staff_reg' ? `
+                                <div style="text-align: left;">
+                                    <label style="font-size: 12px; font-weight: bold;">কর্মীর নাম</label>
+                                    <input type="text" id="regName" placeholder="পূর্ণ নাম">
+                                    <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                                    <input type="text" id="regPhone" placeholder="017xxxxxxxx">
+                                    <button onclick="regStaff()" class="btn">রেজিস্ট্রেশন জমা দিন</button>
+                                </div>
+                            ` : ''}
+
+                            ${authTab === 'owner_reg' ? `
+                                <div style="text-align: left;">
+                                    <label style="font-size: 12px; font-weight: bold;">মালিকের নাম</label>
+                                    <input type="text" id="regOwnerName" placeholder="পূর্ণ নাম">
+                                    <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                                    <input type="text" id="regOwnerPhone" placeholder="017xxxxxxxx">
+                                    <label style="font-size: 12px; font-weight: bold;">সিকিউরিটি কোড</label>
+                                    <input type="password" id="regOwnerCode" placeholder="কোড দিন">
+                                    <button onclick="regOwner()" class="btn">মালিক একাউন্ট তৈরি</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                app.innerHTML = `
+                    <div class="header">
+                        <div>
+                            <h3 style="font-size: 14px; color: #34d399;">Jakir - ltd</h3>
+                            <p style="font-size: 11px; color: #cbd5e1;">${currentUser.name} (${currentUser.role})</p>
+                        </div>
+                        <button onclick="logout()" class="btn btn-red" style="width: auto; font-size: 11px; padding: 6px 10px;">লগআউট</button>
+                    </div>
+
+                    <div class="nav">
+                        <button onclick="setTab('dashboard')" class="btn-sub ${currentTab==='dashboard'?'active':''}">ড্যাশবোর্ড</button>
+                        <button onclick="setTab('inventory')" class="btn-sub ${currentTab==='inventory'?'active':''}">📦 স্টক</button>
+                        <button onclick="setTab('orders')" class="btn-sub ${currentTab==='orders'?'active':''}">মেমো ও প্রিন্ট</button>
+                        ${currentUser.isOwner ? `
+                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">👑 মালিক প্যানেল</button>
+                            <button onclick="setTab('reports')" class="btn-sub ${currentTab==='reports'?'active':''}">📊 রিপোর্ট</button>
+                        ` : ''}
+                    </div>
+
+                    <div style="padding: 16px; max-width: 600px; margin: 0 auto; width: 100%;">
+                        ${currentTab === 'dashboard' ? `
+                            <div class="card">
+                                <h3 style="color: #059669;">স্বাগতম, ${currentUser.name}!</h3>
+                                <p style="font-size: 12px; color: #64748b; margin-top: 4px;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম সফলভাবে সচল রয়েছে।</p>
+                                <div class="grid-2" style="margin-top: 12px;">
+                                    <div style="background: #f1f5f9; padding: 12px; border-radius: 8px;">
+                                        <p style="font-size: 11px; color: #64748b;">মোট মেমো</p>
+                                        <h3 style="font-size: 18px;">${orders.length} টি</h3>
+                                    </div>
+                                    <div style="background: #f1f5f9; padding: 12px; border-radius: 8px;">
+                                        <p style="font-size: 11px; color: #64748b;">স্টক আইটেম</p>
+                                        <h3 style="font-size: 18px; color: #059669;">${inventory.length} প্রকার</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'inventory' ? `
+                            <div class="card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h3>স্টক ইনভেন্টরি</h3>
+                                    ${currentUser.isOwner ? `<button onclick="addProduct()" class="btn" style="width: auto; font-size: 11px; padding: 6px 10px;">+ নতুন মাল</button>` : ''}
+                                </div>
+                                ${inventory.map(i => `
+                                    <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong>${i.name}</strong>
+                                            <p style="font-size: 11px; color: #64748b;">কেনা: ৳${i.buyPrice} | বিক্রি: ৳${i.sellPrice}</p>
+                                        </div>
+                                        <span style="color: #059669; font-weight: bold; font-size: 12px;">${i.stock} পিস</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'orders' ? `
+                            <div class="card">
+                                <h3>নতুন মেমো তৈরি</h3>
+                                <label style="font-size: 12px; font-weight: bold;">গ্রাহকের নাম</label>
+                                <input type="text" id="cName" placeholder="নাম লিখুন">
+                                <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                                <input type="text" id="cPhone" placeholder="017xxxxxxxx">
+                                <label style="font-size: 12px; font-weight: bold;">পণ্য নির্বাচন</label>
+                                <select id="pSelect">
+                                    ${inventory.map(i => `<option value="${i.name}">${i.name} (৳${i.sellPrice})</option>`).join('')}
+                                </select>
+                                <div class="grid-2">
+                                    <div>
+                                        <label style="font-size: 12px; font-weight: bold;">পরিমাণ</label>
+                                        <input type="number" id="pQty" value="1">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 12px; font-weight: bold;">অ্যাডভান্স টাকা</label>
+                                        <input type="number" id="pAdvance" placeholder="৳">
+                                    </div>
+                                </div>
+                                <button onclick="makeOrder()" class="btn">মেমো তৈরি ও সেভ করুন</button>
+
+                                ${currentMemo ? `
+                                    <div id="printableMemo" style="margin-top: 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: black; padding: 16px;">
+                                        <h3 style="text-align: center; color: #059669;">Jakir - ltd</h3>
+                                        <p style="text-align: center; font-size: 11px; margin-bottom: 10px; color: #64748b;">Hanif door management</p>
+                                        <p style="font-size: 12px;">মেমো আইডি: <strong>${currentMemo.id}</strong> | তারিখ: ${currentMemo.date}</p>
+                                        <p style="font-size: 12px;">গ্রাহক: <strong>${currentMemo.customer}</strong> (${currentMemo.phone})</p>
+                                        <hr style="margin: 8px 0; border: 0; border-top: 1px solid #cbd5e1;">
+                                        <p style="font-size: 12px;">পণ্য: ${currentMemo.product} (${currentMemo.qty} পিস)</p>
+                                        <p style="font-size: 12px;">মোট টাকা: ৳${currentMemo.total}</p>
+                                        <p style="font-size: 12px;">অ্যাডভান্স: ৳${currentMemo.advance}</p>
+                                        <p style="font-size: 12px; color: #dc2626;">বকেয়া: ৳${currentMemo.due}</p>
+                                    </div>
+                                    <button onclick="window.print()" class="btn btn-blue" style="margin-top: 8px;">🖨️ প্রিন্ট / PDF সেভ</button>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+
+                        ${currentUser.isOwner && currentTab === 'owner' ? `
+                            <div class="card">
+                                <h3>মালিক প্যানেল (কর্মী অনুমোদন)</h3>
+                                ${staffList.map(s => `
+                                    <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 8px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div>
+                                                <strong>${s.name}</strong> (${s.role})
+                                                ${s.status === 'Pending' ? '<span style="color: #dc2626; font-size: 10px;">[অপেক্ষমাণ]</span>' : ''}
+                                            </div>
+                                            ${s.status === 'Pending' ? `<button onclick="approveStaff(${s.id})" class="btn" style="width: auto; font-size: 10px; padding: 4px 8px;">অনুমোদন</button>` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${currentUser.isOwner && currentTab === 'reports' ? `
+                            <div class="card">
+                                <h3>সেলস রিপোর্ট</h3>
+                                <div class="grid-2" style="margin-top: 10px;">
+                                    <div style="background: #f1f5f9; padding: 10px; border-radius: 8px;">
+                                        <p style="font-size: 11px; color: #64748b;">মোট বিক্রয়</p>
+                                        <h3 style="color: #059669;">৳ ${orders.reduce((a, b) => a + b.total, 0)}</h3>
+                                    </div>
+                                    <div style="background: #f1f5f9; padding: 10px; border-radius: 8px;">
+                                        <p style="font-size: 11px; color: #64748b;">মোট বকেয়া</p>
+                                        <h3 style="color: #dc2626;">৳ ${orders.reduce((a, b) => a + b.due, 0)}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+        }
+
+        function setAuthTab(t) { authTab = t; render(); }
+        function setTab(t) { currentTab = t; render(); }
+
+        function login() {
+            const p = document.getElementById('phone').value.trim();
+            const c = document.getElementById('code').value.trim();
+            const user = staffList.find(s => s.phone === p);
+            if (user) {
+                if (user.status === 'Pending') { alert('একাউন্টটি এখনও অনুমোদিত হয়নি!'); return; }
+                if (user.isOwner && user.code !== c) { alert('ভুল সিকিউরিটি কোড!'); return; }
+                currentUser = user;
+                localStorage.setItem('hanif_user', JSON.stringify(currentUser));
+                render();
+            } else { alert('নম্বরটি পাওয়া যায়নি!'); }
+        }
+
+        function regStaff() {
+            const n = document.getElementById('regName').value.trim();
+            const p = document.getElementById('regPhone').value.trim();
+            if (!n || p.length !== 11) { alert('সঠিক তথ্য দিন!'); return; }
+            staffList.push({ id: staffList.length + 1, name: n, role: 'কর্মী', phone: p, code: '', isOwner: false, status: 'Pending', salary: 0, snacks: 0 });
+            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            alert('রেজিস্ট্রেশন জমা হয়েছে! মালিক অনুমোদন করলে লগইন করতে পারবেন।');
+            authTab = 'login'; render();
+        }
+
+        function regOwner() {
+            const n = document.getElementById('regOwnerName').value.trim();
+            const p = document.getElementById('regOwnerPhone').value.trim();
+            const c = document.getElementById('regOwnerCode').value.trim();
+            if (!n || p.length !== 11 || !c) { alert('সঠিক তথ্য দিন!'); return; }
+            staffList.push({ id: staffList.length + 1, name: n, role: 'মালিক', phone: p, code: c, isOwner: true, status: 'Active', salary: 0, snacks: 0 });
+            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            alert('মালিক একাউন্ট সফলভাবে তৈরি হয়েছে!');
+            authTab = 'login'; render();
+        }
+
+        function approveStaff(id) {
+            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active'} : s);
+            localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+            render();
+        }
+
+        function addProduct() {
+            const n = prompt('মালের নাম:');
+            const s = Number(prompt('স্টক সংখ্যা:'));
+            const b = Number(prompt('কেনা দাম:'));
+            const p = Number(prompt('বিক্রি দাম:'));
+            if (n && !isNaN(s)) {
+                inventory.push({ id: inventory.length + 1, name: n, stock: s, buyPrice: b, sellPrice: p });
+                localStorage.setItem('hanif_inventory', JSON.stringify(inventory));
+                render();
+            }
+        }
+
+        function makeOrder() {
+            const c = document.getElementById('cName').value;
+            const p = document.getElementById('cPhone').value;
+            const item = document.getElementById('pSelect').value;
+            const qty = Number(document.getElementById('pQty').value);
+            const adv = Number(document.getElementById('pAdvance').value) || 0;
+            const pr = inventory.find(i => i.name === item)?.sellPrice || 0;
+            if(!c || !p) { alert('গ্রাহকের নাম ও ফোন দিন!'); return; }
+
+            const total = qty * pr;
+            currentMemo = {
+                id: `MEMO-${1000 + orders.length + 1}`,
+                customer: c, phone: p, product: item, qty: qty, total: total, advance: adv, due: total - adv,
+                date: new Date().toLocaleDateString('bn-BD')
+            };
+            orders.push(currentMemo);
+            localStorage.setItem('hanif_orders', JSON.stringify(orders));
+            render();
+        }
+
+        function logout() { localStorage.removeItem('hanif_user'); currentUser = null; render(); }
+
+        render();
+    </script>
 </body>
 </html>
