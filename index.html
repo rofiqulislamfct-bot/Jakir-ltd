@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>হানিফ ডোর - জাকির লিমিটেড (Management System)</title>
+    <title>হানিফ ডোর - জাকির লিমিটেড</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #f8fafc; color: #1e293b; padding: 10px; }
@@ -11,8 +11,9 @@
         .btn { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .btn-red { background: #dc2626; }
         .btn-blue { background: #2563eb; }
-        .btn-sub { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-sub { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 12px; cursor: pointer; position: relative; }
         .btn-sub.active { background: #059669; color: white; }
+        .badge { background: #dc2626; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; }
         input, select { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #cbd5e1; border-radius: 5px; }
         .nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; }
     </style>
@@ -23,7 +24,6 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         
-        // ডিফল্ট মালিক অ্যাকাউন্ট (ডেমো)
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
             { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, avatar: '' },
             { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', salary: 0, avatar: '' },
@@ -36,6 +36,10 @@
 
         function render() {
             const app = document.getElementById('app');
+            
+            // অপেক্ষমাণ (Pending) কর্মীর সংখ্যা গণনা করা
+            const pendingCount = staffList.filter(s => s.status === 'Pending').length;
+
             if (!currentUser) {
                 app.innerHTML = `
                     <div class="card" style="max-width: 400px; margin: 30px auto;">
@@ -71,16 +75,21 @@
                     <div style="background: #0f172a; color: white; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <div>
                             <h3 style="font-size: 14px; color: #34d399;">Jakir - ltd</h3>
-                            <p style="font-size: 11px;">${currentUser.name} (${currentUser.role}) | বেতন: ৳${currentUser.salary || 0}</p>
+                            <p style="font-size: 11px;">${currentUser.name} (${currentUser.role})</p>
                         </div>
                         <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px;">লগআউট</button>
                     </div>
 
                     <div class="nav">
                         <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
-                        <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল ও কল</button>
-                        <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 ক্যামেরা হাজিরা</button>
-                        ${currentUser.isOwner ? `<button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">👑 মালিক প্যানেল</button>` : ''}
+                        <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল</button>
+                        <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 হাজিরা</button>
+                        ${currentUser.isOwner ? `
+                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">
+                                👑 মালিক প্যানেল
+                                ${pendingCount > 0 ? `<span class="badge">${pendingCount}</span>` : ''}
+                            </button>
+                        ` : ''}
                     </div>
 
                     ${currentTab === 'home' ? `
@@ -103,11 +112,6 @@
                             <p style="font-size: 13px;"><strong>পদবি:</strong> ${currentUser.role}</p>
                             <p style="font-size: 13px;"><strong>মোবাইল:</strong> ${currentUser.phone}</p>
                             <p style="font-size: 13px;"><strong>মাসিক বেতন:</strong> ৳${currentUser.salary || 0}</p>
-
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;">
-                                <button onclick="alert('অডিও কল কানেক্ট হচ্ছে...')" class="btn btn-blue">📞 অডিও কল</button>
-                                <button onclick="alert('ভিডিও কল শুরু হচ্ছে...')" class="btn" style="background: #7c3aed;">📹 ভিডিও কল</button>
-                            </div>
                         </div>
                     ` : ''}
 
@@ -126,14 +130,14 @@
                         <div class="card">
                             <h3>মালিক প্যানেল (কর্মী অনুমোদন ও পদবি/বেতন নির্ধারণ)</h3>
                             ${staffList.map(s => `
-                                <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 12px;">
+                                <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
                                     <p><strong>নাম:</strong> ${s.name} | ফোন: ${s.phone}</p>
                                     <p><strong>পদবি:</strong> ${s.role} | বেতন: ৳${s.salary || 0}</p>
                                     <p><strong>স্ট্যাটাস:</strong> <span style="color:${s.status==='Active'?'green':'red'}">${s.status}</span></p>
                                     
                                     ${s.status === 'Pending' ? `
                                         <div style="margin-top: 8px; display: flex; gap: 5px;">
-                                            <input type="text" id="role_${s.id}" placeholder="পদবি দিন (যেমন: সেলসম্যান)" style="margin:0; font-size:11px;">
+                                            <input type="text" id="role_${s.id}" placeholder="পদবি (যেমন: সেলসম্যান)" style="margin:0; font-size:11px;">
                                             <input type="number" id="sal_${s.id}" placeholder="বেতন ৳" style="margin:0; font-size:11px; width:80px;">
                                             <button onclick="approveStaff(${s.id})" class="btn" style="margin:0; padding:4px 8px; width:auto; font-size:11px;">অনুমোদন</button>
                                         </div>
@@ -183,8 +187,9 @@
             });
 
             localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('আপনার রেজিস্ট্রেশন আবেদন সফলভাবে মালিকের কাছে পাঠানো হয়েছে!');
+            alert('আপনার রেজিস্ট্রেশন আবেদন সফলভাবে জমা হয়েছে! মালিক প্যানেলে নোটিফিকেশন চলে গেছে।');
             setAuthTab('login');
+            render();
         }
 
         function approveStaff(id) {
@@ -193,7 +198,7 @@
 
             staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', role: roleInput, salary: salInput} : s);
             localStorage.setItem('hanif_staff', JSON.stringify(staffList));
-            alert('কর্মী সফলভাবে অনুমোদিত হয়েছে এবং পদবি ও বেতন সেট করা হয়েছে!');
+            alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
             render();
         }
 
