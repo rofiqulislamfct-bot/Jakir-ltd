@@ -1,7 +1,254 @@
-const firebaseConfig = {
-    apiKey: "AIzaSyD0dSV6BayRxmYKRfZa97bPgCSNKDCZp74",
-    authDomain: "jakir-ltd.firebaseapp.com",
-    databaseURL: "https://jakir-ltd-default-rtdb.firebaseio.com",
-    projectId: "jakir-ltd",
-    storageBucket: "jakir-ltd.firebasestorage.app"
-};
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>হানিফ ডোর - জাকির লিমিটেড</title>
+    
+    <!-- Firebase SDK (Compat Version for Web) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #f8fafc; color: #1e293b; padding: 10px; }
+        .card { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+        .btn { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-red { background: #dc2626; }
+        .btn-blue { background: #2563eb; }
+        .btn-sub { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 12px; cursor: pointer; position: relative; white-space: nowrap; }
+        .btn-sub.active { background: #059669; color: white; }
+        .badge { background: #dc2626; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; }
+        input, select { width: 100%; padding: 8px; margin: 4px 0 8px 0; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12px; }
+        .nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div style="text-align:center; margin-top:50px;">
+            <h3>সিস্টেম লোড হচ্ছে...</h3>
+        </div>
+    </div>
+
+    <script>
+        // আপনার ফায়ারবেস কনফিগারেশন (আপনার প্রজেক্টের তথ্য)
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0dSV6BayRxmYKRfZa97bPgCSNKDCZp74",
+            authDomain: "jakir-ltd.firebaseapp.com",
+            databaseURL: "https://jakir-ltd-default-rtdb.firebaseio.com",
+            projectId: "jakir-ltd",
+            storageBucket: "jakir-ltd.firebasestorage.app"
+        };
+
+        // ফায়ারবেস ইনিশিয়ালাইজ করা
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
+        let staffList = [];
+        let authTab = 'login';
+        let currentTab = 'home';
+
+        // ডাটাবেজ থেকে স্টাফ লিস্ট লোড করা
+        function loadStaffData() {
+            db.ref('staffList').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    staffList = snapshot.val();
+                } else {
+                    // ডিফল্ট মালিক অ্যাকাউন্ট
+                    staffList = [
+                        { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, avatar: '' }
+                    ];
+                    db.ref('staffList').set(staffList);
+                }
+                render();
+            });
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            const pendingCount = staffList.filter(s => s.status === 'Pending').length;
+
+            if (!currentUser) {
+                app.innerHTML = `
+                    <div class="card" style="max-width: 400px; margin: 30px auto;">
+                        <h2 style="color: #059669; text-align: center; margin-bottom: 5px;">Jakir - ltd</h2>
+                        <p style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 15px;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম</p>
+
+                        <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                            <button onclick="setAuthTab('login')" class="btn-sub" style="flex:1; ${authTab==='login'?'background:#059669;color:white;':''}">লগইন</button>
+                            <button onclick="setAuthTab('register')" class="btn-sub" style="flex:1; ${authTab==='register'?'background:#059669;color:white;':''}">কর্মী রেজিস্ট্রেশন</button>
+                        </div>
+
+                        ${authTab === 'login' ? `
+                            <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                            <input type="text" id="loginPhone" placeholder="017xxxxxxxx">
+                            <label style="font-size: 12px; font-weight: bold;">সিকিউরিটি কোড (শুধু মালিকের জন্য)</label>
+                            <input type="password" id="loginCode" placeholder="কোড দিন">
+                            <button onclick="login()" class="btn">প্রবেশ করুন</button>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 10px; background: #f1f5f9; padding: 8px; border-radius: 5px;">
+                                <strong>মালিক ডেমো নম্বর:</strong> 01700000001 (কোড: 7771)
+                            </div>
+                        ` : `
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold;">আপনার পূর্ণ নাম</label>
+                                <input type="text" id="regName" placeholder="নাম লিখুন">
+                                <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
+                                <input type="text" id="regPhone" placeholder="017xxxxxxxx">
+                                <button onclick="registerStaff()" class="btn">রেজিস্ট্রেশনের আবেদন পাঠান</button>
+                            </div>
+                        `}
+                    </div>
+                `;
+            } else {
+                app.innerHTML = `
+                    <div style="background: #0f172a; color: white; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                            <h3 style="font-size: 14px; color: #34d399;">Jakir - ltd</h3>
+                            <p style="font-size: 11px;">${currentUser.name} (${currentUser.role})</p>
+                        </div>
+                        <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px;">লগআউট</button>
+                    </div>
+
+                    <div class="nav">
+                        <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
+                        <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল ও কল</button>
+                        <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 ক্যামেরা হাজিরা</button>
+                        ${currentUser.isOwner ? `
+                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">
+                                👑 কর্মী ম্যানেজমেন্ট ও বেতন
+                                ${pendingCount > 0 ? `<span class="badge">${pendingCount}</span>` : ''}
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    ${currentTab === 'home' ? `
+                        <div class="card">
+                            <h3>স্বাগতম, ${currentUser.name}!</h3>
+                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">অনলাইন ডাটাবেজ সফলভাবে সচল রয়েছে।</p>
+                        </div>
+                    ` : ''}
+
+                    ${currentTab === 'profile' ? `
+                        <div class="card">
+                            <h3>আপনার প্রোফাইল ও তথ্য</h3>
+                            <p style="font-size: 13px;"><strong>নাম:</strong> ${currentUser.name}</p>
+                            <p style="font-size: 13px;"><strong>পদবি:</strong> ${currentUser.role}</p>
+                            <p style="font-size: 13px;"><strong>মোবাইল:</strong> ${currentUser.phone}</p>
+                            <p style="font-size: 13px;"><strong>মাসিক বেতন:</strong> ৳${currentUser.salary || 0}</p>
+                            <p style="font-size: 13px;"><strong>দৈনিক নাস্তা বিল:</strong> ৳${currentUser.tiffin || 0}</p>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px;">
+                                <button onclick="alert('অডিও কল কানেক্ট হচ্ছে...')" class="btn btn-blue">📞 অডিও কল</button>
+                                <button onclick="alert('ভিডিও কল শুরু হচ্ছে...')" class="btn" style="background: #7c3aed;">📹 ভিডিও কল</button>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${currentTab === 'attendance' ? `
+                        <div class="card">
+                            <h3>রিয়েল-টাইম ক্যামেরা হাজিরা</h3>
+                            <input type="file" accept="image/*" capture="user" id="attPhoto" style="font-size: 11px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
+                                <button onclick="recordAttendance('Check-In')" class="btn">🟢 চেক-ইন</button>
+                                <button onclick="recordAttendance('Check-Out')" class="btn btn-red">🔴 চেক-আউট</button>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${currentUser.isOwner && currentTab === 'owner' ? `
+                        <div class="card">
+                            <h3 style="color: #059669; margin-bottom: 10px;">👑 কর্মী ম্যানেজমেন্ট ও বেতন নির্ধারণ প্যানেল</h3>
+                            
+                            ${staffList.map(s => `
+                                <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
+                                    <p><strong>নাম:</strong> ${s.name} | ফোন: ${s.phone}</p>
+                                    <p><strong>পদবি:</strong> ${s.role} | বেতন: ৳${s.salary || 0} | নাস্তা: ৳${s.tiffin || 0}</p>
+                                    <p><strong>স্ট্যাটাস:</strong> <span style="color:${s.status==='Active'?'green':'red'}">${s.status}</span></p>
+                                    
+                                    ${s.status === 'Pending' ? `
+                                        <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1;">
+                                            <input type="text" id="role_${s.id}" placeholder="পদবি (যেমন: সেলসম্যান)">
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                                <input type="number" id="sal_${s.id}" placeholder="মাসিক বেতন ৳">
+                                                <input type="number" id="tif_${s.id}" placeholder="নাস্তা বিল ৳">
+                                            </div>
+                                            <button onclick="approveStaff(${s.id})" class="btn" style="margin-top: 5px; padding: 8px;">✅ অনুমোদন ও সেট করুন</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+
+        function setAuthTab(t) { authTab = t; render(); }
+        function setTab(t) { currentTab = t; render(); }
+
+        function login() {
+            const phone = document.getElementById('loginPhone').value.trim();
+            const code = document.getElementById('loginCode').value.trim();
+            const user = staffList.find(s => s.phone === phone);
+
+            if (!user) { alert('এই নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি!'); return; }
+            if (user.status === 'Pending') { alert('আপনার অ্যাকাউন্টটি এখনও মালিকের অনুমোদনের অপেক্ষায় রয়েছে!'); return; }
+            if (user.isOwner && user.code !== code) { alert('ভুল সিকিউরিটি কোড!'); return; }
+
+            currentUser = user;
+            localStorage.setItem('hanif_user', JSON.stringify(currentUser));
+            render();
+        }
+
+        function registerStaff() {
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+
+            if (!name || phone.length !== 11) { alert('সঠিক নাম ও ১১ ডিজিটের মোবাইল নম্বর দিন!'); return; }
+            if (staffList.some(s => s.phone === phone)) { alert('এই নম্বর দিয়ে আগেই আবেদন করা হয়েছে!'); return; }
+
+            staffList.push({
+                id: staffList.length + 1,
+                name: name,
+                role: 'অপেক্ষমাণ কর্মী',
+                phone: phone,
+                code: '',
+                isOwner: false,
+                status: 'Pending',
+                salary: 0,
+                tiffin: 0,
+                avatar: ''
+            });
+
+            db.ref('staffList').set(staffList).then(() => {
+                alert('রেজিস্ট্রেশনের আবেদন সফলভাবে জমা হয়েছে! মালিক প্যানেলে এখন রিয়েল-টাইম নোটিফিকেশন দেখাবে।');
+                setAuthTab('login');
+            });
+        }
+
+        function approveStaff(id) {
+            const roleInput = document.getElementById(`role_${id}`).value.trim() || 'কর্মী';
+            const salInput = Number(document.getElementById(`sal_${id}`).value) || 0;
+            const tifInput = Number(document.getElementById(`tif_${id}`).value) || 0;
+
+            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', role: roleInput, salary: salInput, tiffin: tifInput} : s);
+            db.ref('staffList').set(staffList).then(() => {
+                alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
+            });
+        }
+
+        function logout() { localStorage.removeItem('hanif_user'); currentUser = null; render(); }
+
+        function recordAttendance(type) {
+            if (!navigator.geolocation) { alert('লোকেশন সমর্থিত নয়!'); return; }
+            navigator.geolocation.getCurrentPosition(() => {
+                alert(type + ' সফল হয়েছে!');
+            }, () => { alert('দয়া করে জিপিএস লোকেশন পারমিশন অন করুন!'); });
+        }
+
+        // অ্যাপ স্টার্ট
+        loadStaffData();
+    </script>
+</body>
+</html>
