@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>হানিফ ডোর - জাকির লিমিটেড</title>
     
-    <!-- Firebase SDK (Modular v9/v10 CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
@@ -29,11 +28,7 @@
     </style>
 </head>
 <body>
-    <div id="app">
-        <div style="text-align:center; margin-top:50px;">
-            <h3>সিস্টেম লোড হচ্ছে...</h3>
-        </div>
-    </div>
+    <div id="app"></div>
 
     <script>
         const firebaseConfig = {
@@ -54,6 +49,7 @@
             console.log("Firebase Init Failed");
         }
 
+        // লোকাল স্টোরেজ থেকে ডাটা নিয়ে সাথে সাথে চালু করা
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
             { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, advance: 0 }
@@ -70,44 +66,40 @@
         let authTab = 'login';
         let currentTab = 'home';
 
-        // রিয়েল-টাইম ডাটা সিঙ্ক
-        function initRealtimeSync() {
-            if (!db) {
-                render();
-                return;
-            }
+        // পেজ চালু হওয়ার সাথে সাথেই রেন্ডার করে ফেলা যাতে লোডিং স্ক্রিন আটকে না থাকে
+        render();
 
-            db.ref('staffList').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    staffList = snapshot.val();
+        // ব্যাকগ্রাউন্ডে ফায়ারবেস সিঙ্ক করা
+        if (db) {
+            db.ref('staffList').on('value', (snap) => {
+                if (snap.exists()) {
+                    staffList = snap.val();
                     localStorage.setItem('hanif_staff', JSON.stringify(staffList));
+                    render();
                 } else {
                     db.ref('staffList').set(staffList);
                 }
-                render();
-            }, (error) => {
-                render();
             });
 
-            db.ref('attendanceLogs').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    attendanceLogs = snapshot.val();
+            db.ref('attendanceLogs').on('value', (snap) => {
+                if (snap.exists()) {
+                    attendanceLogs = snap.val();
                     localStorage.setItem('hanif_attendance', JSON.stringify(attendanceLogs));
                     render();
                 }
             });
 
-            db.ref('notices').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    notices = snapshot.val();
+            db.ref('notices').on('value', (snap) => {
+                if (snap.exists()) {
+                    notices = snap.val();
                     localStorage.setItem('hanif_notices', JSON.stringify(notices));
                     render();
                 }
             });
 
-            db.ref('inventory').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    inventory = snapshot.val();
+            db.ref('inventory').on('value', (snap) => {
+                if (snap.exists()) {
+                    inventory = snap.val();
                     localStorage.setItem('hanif_inventory', JSON.stringify(inventory));
                     render();
                 }
@@ -115,6 +107,7 @@
         }
 
         function syncData(path, data) {
+            localStorage.setItem(path === 'staffList' ? 'hanif_staff' : path === 'attendanceLogs' ? 'hanif_attendance' : path === 'notices' ? 'hanif_notices' : 'hanif_inventory', JSON.stringify(data));
             if (db) {
                 db.ref(path).set(data);
             }
@@ -345,6 +338,7 @@
             syncData('staffList', staffList);
             alert('রেজিস্ট্রেশনের আবেদন সফলভাবে জমা হয়েছে!');
             setAuthTab('login');
+            render();
         }
 
         function approveStaff(id) {
@@ -355,6 +349,7 @@
             staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', role: roleInput, salary: salInput, tiffin: tifInput} : s);
             syncData('staffList', staffList);
             alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
+            render();
         }
 
         function giveAdvance(id) {
@@ -364,6 +359,7 @@
             staffList = staffList.map(s => s.id === id ? {...s, advance: (s.advance || 0) + amt} : s);
             syncData('staffList', staffList);
             alert('অগ্রিম লোন সফলভাবে যুক্ত করা হয়েছে!');
+            render();
         }
 
         function addInventory() {
@@ -375,6 +371,7 @@
             inventory.push({ id: Date.now(), name, stock, price });
             syncData('inventory', inventory);
             alert('নতুন পণ্য স্টকে যুক্ত হয়েছে!');
+            render();
         }
 
         function postNotice() {
@@ -384,6 +381,7 @@
             notices.unshift({ id: Date.now(), text: text, date: new Date().toLocaleDateString('bn-BD') });
             syncData('notices', notices);
             alert('নোটিশ প্রকাশিত হয়েছে!');
+            render();
         }
 
         function exportToCSV() {
@@ -414,10 +412,9 @@
                 });
                 syncData('attendanceLogs', attendanceLogs);
                 alert(type + ' সফল হয়েছে!');
+                render();
             }, () => { alert('দয়া করে জিপিএস লোকেশন পারমিশন অন করুন!'); });
         }
-
-        initRealtimeSync();
     </script>
 </body>
 </html>
