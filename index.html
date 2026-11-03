@@ -40,24 +40,38 @@
             appId: "1:235034327378:web:a3233b7fe27a2f9436a28b"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        let db = null;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+        } catch (e) {
+            console.log("Firebase Init Error");
+        }
 
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
-        let staffList = [];
+        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
+            { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, avatar: '' }
+        ];
         let authTab = 'login';
         let currentTab = 'home';
 
         function loadStaffData() {
+            if (!db) {
+                render();
+                return;
+            }
+            
+            // ফায়ারবেস থেকে ডাটা লোড করার চেষ্টা করবে, না পেলে লোকাল ডাটা দেখাবে
             db.ref('staffList').on('value', (snapshot) => {
                 if (snapshot.exists()) {
                     staffList = snapshot.val();
+                    localStorage.setItem('hanif_staff', JSON.stringify(staffList));
                 } else {
-                    staffList = [
-                        { id: 1, name: 'জাকির হোসেন', role: 'প্রধান মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, avatar: '' }
-                    ];
                     db.ref('staffList').set(staffList);
                 }
+                render();
+            }, (error) => {
+                console.log("DB Read Error, using local storage");
                 render();
             });
         }
@@ -122,7 +136,7 @@
                     ${currentTab === 'home' ? `
                         <div class="card">
                             <h3>স্বাগতম, ${currentUser.name}!</h3>
-                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">ফায়ারবেস অনলাইন ডাটাবেজ সফলভাবে সচল রয়েছে।</p>
+                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">সিস্টেম সফলভাবে সচল রয়েছে।</p>
                         </div>
                     ` : ''}
 
@@ -158,45 +172,4 @@
                             <h3 style="color: #059669; margin-bottom: 10px;">👑 কর্মী ম্যানেজমেন্ট ও বেতন নির্ধারণ প্যানেল</h3>
                             
                             ${staffList.map(s => `
-                                <div style="background: #f1f5f9; padding: 12px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
-                                    <p><strong>নাম:</strong> ${s.name} | ফোন: ${s.phone}</p>
-                                    <p><strong>পদবি:</strong> ${s.role} | বেতন: ৳${s.salary || 0} | নাস্তা: ৳${s.tiffin || 0}</p>
-                                    <p><strong>স্ট্যাটাস:</strong> <span style="color:${s.status==='Active'?'green':'red'}">${s.status}</span></p>
-                                    
-                                    ${s.status === 'Pending' ? `
-                                        <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1;">
-                                            <input type="text" id="role_${s.id}" placeholder="পদবি (যেমন: সেলসম্যান)">
-                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                                                <input type="number" id="sal_${s.id}" placeholder="মাসিক বেতন ৳">
-                                                <input type="number" id="tif_${s.id}" placeholder="নাস্তা বিল ৳">
-                                            </div>
-                                            <button onclick="approveStaff(${s.id})" class="btn" style="margin-top: 5px; padding: 8px;">✅ অনুমোদন ও সেট করুন</button>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                `;
-            }
-        }
-
-        function setAuthTab(t) { authTab = t; render(); }
-        function setTab(t) { currentTab = t; render(); }
-
-        function login() {
-            const phone = document.getElementById('loginPhone').value.trim();
-            const code = document.getElementById('loginCode').value.trim();
-            const user = staffList.find(s => s.phone === phone);
-
-            if (!user) { alert('এই নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি!'); return; }
-            if (user.status === 'Pending') { alert('আপনার অ্যাকাউন্টটি এখনও মালিকের অনুমোদনের অপেক্ষায় রয়েছে!'); return; }
-            if (user.isOwner && user.code !== code) { alert('ভুল সিকিউরিটি কোড!'); return; }
-
-            currentUser = user;
-            localStorage.setItem('hanif_user', JSON.stringify(currentUser));
-            render();
-        }
-
-        function registerStaff() {
-            const name = document.getElementById('
+                                <div style="background: #f1f5f9; padding: 12px; border
