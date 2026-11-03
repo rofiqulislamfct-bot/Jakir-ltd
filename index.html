@@ -13,9 +13,11 @@
         .btn-blue { background: #2563eb; }
         .btn-sub { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; font-size: 12px; cursor: pointer; position: relative; white-space: nowrap; }
         .btn-sub.active { background: #059669; color: white; }
-        .badge { background: #dc2626; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -5px; }
+        .badge { background: #dc2626; color: white; border-radius: 50%; padding: 2px 6px; font-size: 11px; position: absolute; top: -5px; right: -5px; font-weight: bold; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
         input, select { width: 100%; padding: 8px; margin: 4px 0 8px 0; border: 1px solid #cbd5e1; border-radius: 5px; font-size: 12px; }
         .nav { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; }
+        .notif-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; color: #1e40af; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
@@ -29,9 +31,18 @@
         let authTab = 'login';
         let currentTab = 'home';
 
+        // রিয়েল-টাইম সিঙ্ক (অন্য ট্যাব বা উইন্ডো থেকে ডাটা আপডেট হলে অটো রেন্ডার করবে)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'hanif_staff') {
+                staffList = JSON.parse(e.newValue) || staffList;
+                render();
+            }
+        });
+
         function render() {
             const app = document.getElementById('app');
-            const pendingCount = staffList.filter(s => s.status === 'Pending').length;
+            const pendingStaffs = staffList.filter(s => s.status === 'Pending');
+            const pendingCount = pendingStaffs.length;
 
             if (!currentUser) {
                 app.innerHTML = `
@@ -74,13 +85,20 @@
                         <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px;">লগআউট</button>
                     </div>
 
+                    ${currentUser.isOwner && pendingCount > 0 ? `
+                        <div class="notif-box">
+                            <span>🔔 নতুন কর্মীর <strong>${pendingCount}টি</strong> অনুমোদনের আবেদন এসেছে!</span>
+                            <button onclick="setTab('owner')" class="btn-sub" style="background:#2563eb; color:white; padding:4px 8px;">দেখুন</button>
+                        </div>
+                    ` : ''}
+
                     <div class="nav">
                         <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
                         <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল ও কল</button>
                         <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 ক্যামেরা হাজিরা</button>
                         ${currentUser.isOwner ? `
-                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">
-                                👑 কর্মী ম্যানেজমেন্ট ও বেতন
+                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}" style="position:relative;">
+                                👑 কর্মী ম্যানেজমেন্ট
                                 ${pendingCount > 0 ? `<span class="badge">${pendingCount}</span>` : ''}
                             </button>
                         ` : ''}
@@ -89,7 +107,7 @@
                     ${currentTab === 'home' ? `
                         <div class="card">
                             <h3>স্বাগতম, ${currentUser.name}!</h3>
-                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">সিস্টেম সফলভাবে সচল রয়েছে।</p>
+                            <p style="font-size: 12px; color: #64748b; margin-top: 5px;">ম্যানেজমেন্ট সিস্টেম রিয়েল-টাইম মোডে সচল রয়েছে।</p>
                         </div>
                     ` : ''}
 
@@ -173,7 +191,7 @@
             if (staffList.some(s => s.phone === phone)) { alert('এই নম্বর দিয়ে আগেই আবেদন করা হয়েছে!'); return; }
 
             staffList.push({
-                id: staffList.length + 1,
+                id: Date.now(),
                 name: name,
                 role: 'অপেক্ষমাণ কর্মী',
                 phone: phone,
