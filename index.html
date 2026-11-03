@@ -6,32 +6,284 @@
     <title>হানিফ ডোর - জাকির লিমিটেড</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }</style>
+    <style>
+        body { font-family: 'Hind Siliguri', sans-serif; background-color: #020617; color: #f8fafc; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableMemo, #printableMemo * { visibility: visible; }
+            #printableMemo { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; }
+        }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4 text-center shadow-2xl">
-        <h1 class="text-xl font-bold text-emerald-400">হানিফ ডোর</h1>
-        <p class="text-xs text-slate-400">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
-        <div class="bg-slate-800 p-4 rounded-xl text-left space-y-2 text-xs">
-            <p class="text-emerald-300 font-bold">মালিক ডেমো লগইন:</p>
-            <p>• জাকির: 01700000001 (কোড: 7771)</p>
-            <p>• হৃদয়: 01700000002 (কোড: 7772)</p>
-            <p>• জীবন: 01700000003 (কোড: 7773)</p>
-        </div>
-        <input type="text" id="phone" placeholder="মোবাইল নম্বর দিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
-        <input type="password" id="code" placeholder="সিকিউরিটি কোড (যদি মালিক হন)" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
-        <button onclick="login()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm">প্রবেশ করুন</button>
-    </div>
+<body class="min-h-screen flex flex-col">
+    <div id="app" class="flex-1 flex flex-col"></div>
 
     <script>
-        function login() {
-            const p = document.getElementById('phone').value.trim();
-            if(p === '01700000001' || p === '01700000002' || p === '01700000003' || p.length === 11) {
-                alert('লগইন সফল হয়েছে! সিস্টেম সচল আছে।');
+        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
+        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
+            { id: 1, name: 'জাকির হোসেন', role: 'মালিক (Managing Director)', phone: '01700000001', code: '7771', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক (Director)', phone: '01700000002', code: '7772', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক (Director)', phone: '01700000003', code: '7773', salary: 0, snacks: 0, fine: 0, isOwner: true, status: 'Active', avatar: '' }
+        ];
+        let orders = JSON.parse(localStorage.getItem('hanif_orders')) || [];
+        let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
+            { id: 1, name: 'হানিফ পলিমার ডোর', stock: 25, buyPrice: 3500, sellPrice: 4500 },
+            { id: 2, name: 'মেলামাইন ডোর', stock: 12, buyPrice: 4000, sellPrice: 5200 }
+        ];
+        let authMode = 'login'; // 'login', 'staff_reg', 'owner_reg'
+        let activeTab = 'dashboard';
+        let currentMemo = null;
+
+        function render() {
+            const app = document.getElementById('app');
+            if (!currentUser) {
+                app.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center p-4">
+                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md space-y-4 shadow-2xl">
+                            <div class="text-center">
+                                <h1 class="text-xl font-bold text-emerald-400">হানিফ ডোর</h1>
+                                <p class="text-xs text-slate-400">জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেম</p>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-1 bg-slate-800 p-1 rounded-xl text-[11px] font-semibold text-center">
+                                <button onclick="switchAuth('login')" class="py-2 rounded-lg ${authMode === 'login' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">লগইন</button>
+                                <button onclick="switchAuth('staff_reg')" class="py-2 rounded-lg ${authMode === 'staff_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">কর্মী রেজি.</button>
+                                <button onclick="switchAuth('owner_reg')" class="py-2 rounded-lg ${authMode === 'owner_reg' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">মালিক রেজি.</button>
+                            </div>
+
+                            ${authMode === 'login' ? `
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs text-slate-300 mb-1">মোবাইল নম্বর</label>
+                                        <input type="text" id="loginPhone" placeholder="017xxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-300 mb-1">সিকিউরিটি কোড (শুধু মালিকদের জন্য)</label>
+                                        <input type="password" id="loginCode" placeholder="কোড দিন" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-white text-center text-sm">
+                                    </div>
+                                    <button onclick="handleLogin()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg text-sm">প্রবেশ করুন</button>
+                                </div>
+                                <div class="text-[11px] text-slate-400 bg-slate-800/60 p-2.5 rounded space-y-1">
+                                    <p class="font-bold text-emerald-300">মালিক ডেমো লগইন:</p>
+                                    <p>• জাকির: 01700000001 (কোড: 7771)</p>
+                                    <p>• হৃদয়: 01700000002 (কোড: 7772)</p>
+                                    <p>• জীবন: 01700000003 (কোড: 7773)</p>
+                                </div>
+                            ` : ''}
+
+                            ${authMode === 'staff_reg' ? `
+                                <div class="space-y-3 text-xs">
+                                    <h2 class="font-bold text-emerald-400 text-center">নতুন কর্মী রেজিস্ট্রেশন</h2>
+                                    <div>
+                                        <label class="block text-slate-300 mb-1">পূর্ণ নাম</label>
+                                        <input type="text" id="regStaffName" placeholder="কর্মীর নাম লিখুন" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-300 mb-1">মোবাইল নম্বর (১১ ডিজিট)</label>
+                                        <input type="text" id="regStaffPhone" placeholder="017xxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    </div>
+                                    <button onclick="registerStaff()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+                                </div>
+                            ` : ''}
+
+                            ${authMode === 'owner_reg' ? `
+                                <div class="space-y-3 text-xs">
+                                    <h2 class="font-bold text-emerald-400 text-center">নতুন মালিক রেজিস্ট্রেশন</h2>
+                                    <div>
+                                        <label class="block text-slate-300 mb-1">মালিকের নাম</label>
+                                        <input type="text" id="regOwnerName" placeholder="নাম লিখুন" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-300 mb-1">মোবাইল নম্বর</label>
+                                        <input type="text" id="regOwnerPhone" placeholder="017xxxxxxxx" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    </div>
+                                    <div>
+                                        <label class="block text-slate-300 mb-1">গোপন সিকিউরিটি কোড</label>
+                                        <input type="password" id="regOwnerCode" placeholder="কোড দিন" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    </div>
+                                    <button onclick="registerOwner()" class="w-full bg-emerald-600 text-white font-semibold py-2.5 rounded-lg">মালিক অ্যাকাউন্ট তৈরি</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
             } else {
-                alert('সঠিক মোবাইল নম্বর দিন!');
-            }
-        }
-    </script>
-</body>
-</html>
+                app.innerHTML = `
+                    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center sticky top-0 z-50">
+                        <div>
+                            <h1 class="font-bold text-emerald-400 text-sm">হানিফ ডোর - জাকির লিমিটেড</h1>
+                            <p class="text-[11px] text-slate-400">ব্যবহারকারী: ${currentUser.name} (${currentUser.role})</p>
+                        </div>
+                        <div class="flex gap-2">
+                            ${currentUser.isOwner ? `<button onclick="handleMasterLogout()" class="bg-amber-600/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded text-[11px]">🔴 সবার লগআউট</button>` : ''}
+                            <button onclick="handleLogout()" class="bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-1 rounded text-[11px]">লগআউট</button>
+                        </div>
+                    </header>
+
+                    <nav class="bg-slate-900/50 border-b border-slate-800 px-4 py-2 flex gap-2 overflow-x-auto text-xs">
+                        <button onclick="switchTab('dashboard')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">ড্যাশবোর্ড</button>
+                        <button onclick="switchTab('profile')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'profile' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">প্রোফাইল</button>
+                        <button onclick="switchTab('inventory')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'inventory' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">📦 স্টক</button>
+                        <button onclick="switchTab('orders')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'orders' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">মেমো</button>
+                        ${currentUser.isOwner ? `
+                            <button onclick="switchTab('owner_panel')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'owner_panel' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">👑 মালিক প্যানেল</button>
+                            <button onclick="switchTab('reports')" class="px-3 py-1.5 rounded-lg whitespace-nowrap ${activeTab === 'reports' ? 'bg-emerald-600 text-white' : 'text-slate-400'}">📊 ডেইলি রিপোর্ট</button>
+                        ` : ''}
+                    </nav>
+
+                    <main class="p-4 flex-1 max-w-4xl w-full mx-auto space-y-4 text-sm">
+                        ${activeTab === 'dashboard' ? `
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-3">
+                                <h2 class="font-bold text-emerald-400 text-base">স্বাগতম, ${currentUser.name}</h2>
+                                <p class="text-xs text-slate-300">পদবি: <span class="text-emerald-300 font-semibold">${currentUser.role}</span></p>
+                                <div class="grid grid-cols-2 gap-3 pt-2">
+                                    <div class="bg-slate-800 p-3 rounded-lg">
+                                        <p class="text-[11px] text-slate-400">মোট মেমো</p>
+                                        <p class="text-base font-bold text-white">${orders.length} টি</p>
+                                    </div>
+                                    <div class="bg-slate-800 p-3 rounded-lg">
+                                        <p class="text-[11px] text-slate-400">স্টক আইটেম</p>
+                                        <p class="text-base font-bold text-emerald-400">${inventory.length} প্রকার</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${activeTab === 'profile' ? `
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 max-w-xl text-xs">
+                                <h2 class="font-bold text-emerald-400 text-sm">ব্যক্তিগত প্রোফাইল ও ছবি</h2>
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 rounded-full bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center">
+                                        ${currentUser.avatar ? `<img src="${currentUser.avatar}" class="w-full h-full object-cover">` : '<span class="text-2xl">👤</span>'}
+                                    </div>
+                                    <div>
+                                        <input type="file" accept="image/*" onchange="updateAvatar(event)" class="text-[11px] text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700">
+                                        <p class="text-[10px] text-slate-500 mt-1">প্রোফাইল ছবি পরিবর্তন করুন</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-2 pt-2 border-t border-slate-800">
+                                    <p>নাম: <strong class="text-white">${currentUser.name}</strong></p>
+                                    <p>পদবি: <strong class="text-emerald-400">${currentUser.role}</strong></p>
+                                    <p>ফোন: <strong class="text-white">${currentUser.phone}</strong></p>
+                                    <p>বেতন: <strong class="text-emerald-400">৳ ${currentUser.salary || 0}</strong></p>
+                                    <p>নাস্তা: <strong class="text-blue-400">৳ ${currentUser.snacks || 0}</strong></p>
+                                    <p>ফাইন: <strong class="text-red-400">৳ ${currentUser.fine || 0}</strong></p>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${activeTab === 'inventory' ? `
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 text-xs">
+                                <div class="flex justify-between items-center">
+                                    <h2 class="font-bold text-emerald-400 text-sm">স্টক ইনভেন্টরি</h2>
+                                    ${currentUser.isOwner ? '<button onclick="addNewProductPrompt()" class="bg-emerald-600 text-white px-3 py-1 rounded">+ নতুন পণ্য</button>' : ''}
+                                </div>
+                                <div class="space-y-2">
+                                    ${inventory.map(item => `
+                                        <div class="bg-slate-800 p-3 rounded-lg flex justify-between items-center">
+                                            <div>
+                                                <p class="font-bold text-white text-sm">${item.name}</p>
+                                                <p class="text-slate-400">ক্রয়: ৳${item.buyPrice} \vert{} বিক্রি: ৳${item.sellPrice}</p>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="px-2 py-1 rounded text-xs ${item.stock > 10 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">স্টক: ${item.stock} পিস</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${activeTab === 'orders' ? `
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4 text-xs">
+                                <h2 class="font-bold text-emerald-400 text-sm">নতুন মেমো তৈরি ও প্রিন্ট</h2>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input type="text" id="custName" placeholder="গ্রাহকের নাম" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    <input type="text" id="custPhone" placeholder="মোবাইল নম্বর" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    <select id="prodSelect" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                        ${inventory.map(i => `<option value="${i.name}">${i.name} (মূল্য: ৳${i.sellPrice})</option>`).join('')}
+                                    </select>
+                                    <input type="number" id="prodQty" placeholder="পরিমাণ" value="1" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    <input type="number" id="prodPrice" placeholder="প্রতি পিস মূল্য" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                    <input type="number" id="prodAdvance" placeholder="অ্যাডভান্স টাকা" class="bg-slate-800 border border-slate-700 rounded p-2 text-white">
+                                </div>
+                                <button onclick="createOrder()" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold w-full">মেমো তৈরি ও সেভ করুন</button>
+
+                                ${currentMemo ? `
+                                    <div id="printableMemo" class="bg-white text-black p-6 rounded-xl space-y-4 shadow-lg mt-4">
+                                        <div class="text-center border-b pb-2">
+                                            <h2 class="font-bold text-lg text-emerald-700">হানিফ ডোর - জাকির লিমিটেড</h2>
+                                            <p class="text-xs text-gray-600">ফ্যাক্টরি ও শো-রুম ম্যানেজমেন্ট সিস্টেম</p>
+                                        </div>
+                                        <div class="flex justify-between text-xs">
+                                            <div>
+                                                <p><strong>মেমো আইডি:</strong> ${currentMemo.id}</p>
+                                                <p><strong>গ্রাহক:</strong> ${currentMemo.customer}</p>
+                                                <p><strong>ফোন:</strong> ${currentMemo.phone}</p>
+                                            </div>
+                                            <div>
+                                                <p><strong>তারিখ:</strong> ${currentMemo.date}</p>
+                                            </div>
+                                        </div>
+                                        <table class="w-full text-left border-collapse text-xs">
+                                            <thead>
+                                                <tr class="border-b">
+                                                    <th class="py-1">পণ্যের বিবরণ</th>
+                                                    <th class="py-1">পরিমাণ</th>
+                                                    <th class="py-1">মূল্য</th>
+                                                    <th class="py-1 text-right">মোট</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="py-1">${currentMemo.product}</td>
+                                                    <td class="py-1">${currentMemo.qty} pcs</td>
+                                                    <td class="py-1">৳${currentMemo.price}</td>
+                                                    <td class="py-1 text-right">৳${currentMemo.total}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div class="border-t pt-2 text-xs space-y-1 text-right">
+                                            <p>মোট টাকা: <strong>৳${currentMemo.total}</strong></p>
+                                            <p>অ্যাডভান্স: <strong>৳${currentMemo.advance}</strong></p>
+                                            <p class="text-red-600">বকেয়া: <strong>৳${currentMemo.due}</strong></p>
+                                        </div>
+                                        <div class="flex justify-between items-center pt-6 text-[10px] text-gray-500 border-t">
+                                            <p>বিক্রিত পণ্য ফেরত নেওয়া হয় না।</p>
+                                            <p>স্বাক্ষর</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded font-semibold w-full mt-2">🖨️ প্রিন্ট করুন / PDF সেভ করুন</button>
+                                ` : ''}
+
+                                <div class="space-y-2 mt-4">
+                                    <h3 class="font-bold text-slate-300">সকল সংরক্ষিত মেমো:</h3>
+                                    ${orders.length === 0 ? '<p class="text-slate-500">কোনো মেমো নেই</p>' : orders.map(o => `
+                                        <div class="bg-slate-800 p-2.5 rounded flex justify-between items-center">
+                                            <div>
+                                                <p class="font-bold text-white">${o.id} - ${o.customer} (${o.phone})</p>
+                                                <p class="text-slate-400">পণ্য: ${o.product} x ${o.qty} \vert{} বকেয়া: ৳ ${o.due}</p>
+                                            </div>
+                                            <button onclick="loadMemo('${o.id}')" class="bg-slate-700 px-2 py-1 rounded text-emerald-400">দেখুন</button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${currentUser.isOwner && activeTab === 'owner_panel' ? `
+                            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4">
+                                <h2 class="font-bold text-emerald-400 text-sm">মালিক নিয়ন্ত্রণ প্যানেল (কর্মী কনফার্মেশন ও বেতন)</h2>
+                                <div class="space-y-3">
+                                    ${staffList.map(st => `
+                                        <div class="p-3 rounded-xl border ${st.status === 'Pending' ? 'bg-amber-950/20 border-amber-500/40' : 'bg-slate-800 border-slate-700'} space-y-2 text-xs">
+                                            <div class="flex justify-between items-center">
+                                                <div>
+                                                    <span class="font-bold text-white">${st.name}</span> (${st.role})${st.status === 'Pending' ? '<span class="ml-2 bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded text-[10px]">অপেক্ষমাণ (Pending)</span>' : ''}
+                                                </div>
+                                                ${st.status === 'Pending' ? `<button onclick="confirmStaff(${st.id})" class="bg-emerald-600 text-white px-2.5 py-1 rounded">কনফার্ম করুন</button>` : ''}
+                                            </div>
+                                            <div class="grid grid-cols-3 gap-2">
+                                                <div>
+                                                    <label class="text-[10px] text-slate-400">বেতন</label>
+                                                    <input type="number" value="${st.salary}" onchange="updateStaff(${st.id}, 'salary', this.value)" class="w-full bg-slate-900 border border-slate-7
