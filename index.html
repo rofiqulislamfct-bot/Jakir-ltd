@@ -6,7 +6,7 @@
     <title>Jakir - ltd | হানিফ ডোর</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
+        body { background-color: #0f172a !important; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
         .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
         .btn { background-color: #059669; color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 14px; }
         .btn-red { background-color: #dc2626; }
@@ -21,15 +21,10 @@
         .text-green { color: #34d399; }
         .text-red { color: #f87171; }
         .text-gray { color: #94a3b8; }
-        @media print {
-            body * { visibility: hidden; }
-            #printableMemo, #printableMemo * { visibility: visible; }
-            #printableMemo { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
-        }
     </style>
 </head>
 <body>
-    <div id="app"></div>
+    <div id="app" style="width:100%; flex:1; display:flex; flex-direction:column;"></div>
 
     <script>
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
@@ -51,7 +46,7 @@
             const app = document.getElementById('app');
             if (!currentUser) {
                 app.innerHTML = `
-                    <div style="max-width: 400px; margin: 40px auto; padding: 16px;">
+                    <div style="max-width: 400px; margin: 40px auto; padding: 16px; width: 100%;">
                         <div class="card" style="text-align: center;">
                             <h2 class="text-green" style="margin-bottom: 4px;">Jakir - ltd</h2>
                             <p class="text-gray" style="font-size: 12px; margin-bottom: 16px;">Hanif door management</p>
@@ -95,73 +90,4 @@
                                     <label style="font-size: 12px;">মোবাইল নম্বর</label>
                                     <input type="text" id="regOwnerPhone" placeholder="017xxxxxxxx">
                                     <label style="font-size: 12px;">সিকিউরিটি কোড</label>
-                                    <input type="password" id="regOwnerCode" placeholder="কোড দিন">
-                                    <button onclick="regOwner()" class="btn">মালিক একাউন্ট তৈরি</button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            } else {
-                app.innerHTML = `
-                    <div class="header">
-                        <div>
-                            <h3 class="text-green" style="font-size: 14px;">Jakir - ltd</h3>
-                            <p style="font-size: 11px;" class="text-gray">${currentUser.name} (${currentUser.role})</p>
-                        </div>
-                        <button onclick="logout()" class="btn btn-red" style="width: auto; font-size: 11px; padding: 6px 10px;">লগআউট</button>
-                    </div>
-
-                    <div class="nav">
-                        <button onclick="setTab('dashboard')" class="btn-sub ${currentTab==='dashboard'?'active':''}">ড্যাশবোর্ড</button>
-                        <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">প্রোফাইল</button>
-                        <button onclick="setTab('inventory')" class="btn-sub ${currentTab==='inventory'?'active':''}">📦 স্টক</button>
-                        <button onclick="setTab('orders')" class="btn-sub ${currentTab==='orders'?'active':''}">মেমো</button>
-                        ${currentUser.isOwner ? `
-                            <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}">👑 মালিক প্যানেল</button>
-                            <button onclick="setTab('reports')" class="btn-sub ${currentTab==='reports'?'active':''}">📊 রিপোর্ট</button>
-                        ` : ''}
-                    </div>
-
-                    <div style="padding: 16px; max-width: 600px; margin: 0 auto; width: 100%;">
-                        ${currentTab === 'dashboard' ? `
-                            <div class="card">
-                                <h3 class="text-green">স্বাগতম, ${currentUser.name}!</h3>
-                                <p style="font-size: 12px; margin-top: 4px;" class="text-gray">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম সচল রয়েছে।</p>
-                                <div class="grid-2" style="margin-top: 12px;">
-                                    <div style="background: #0f172a; padding: 10px; border-radius: 8px;">
-                                        <p style="font-size: 11px;" class="text-gray">মোট মেমো</p>
-                                        <h2 style="font-size: 18px;">${orders.length} টি</h2>
-                                    </div>
-                                    <div style="background: #0f172a; padding: 10px; border-radius: 8px;">
-                                        <p style="font-size: 11px;" class="text-gray">স্টক আইটেম</p>
-                                        <h2 class="text-green" style="font-size: 18px;">${inventory.length} প্রকার</h2>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        ${currentTab === 'profile' ? `
-                            <div class="card">
-                                <h3>ব্যক্তিগত প্রোফাইল</h3>
-                                <div style="display: flex; gap: 12px; align-items: center; margin: 12px 0;">
-                                    <div style="width: 50px; h-50px; background: #0f172a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px;">👤</div>
-                                    <input type="file" onchange="uploadAvatar(event)" style="margin: 0; font-size: 11px;">
-                                </div>
-                                <p style="font-size: 13px;">নাম: <strong>${currentUser.name}</strong></p>
-                                <p style="font-size: 13px;">পদবি: <strong class="text-green">${currentUser.role}</strong></p>
-                                <p style="font-size: 13px;">ফোন: <strong>${currentUser.phone}</strong></p>
-                                <p style="font-size: 13px;">বেতন: <strong>৳${currentUser.salary || 0}</strong></p>
-                                <p style="font-size: 13px;">নাস্তা: <strong>৳${currentUser.snacks || 0}</strong></p>
-                                <p style="font-size: 13px;">ফাইন: <strong class="text-red">৳${currentUser.fine || 0}</strong></p>
-                            </div>
-                        ` : ''}
-
-                        ${currentTab === 'inventory' ? `
-                            <div class="card">
-                                <div style="display: flex; justify-between; align-items: center; margin-bottom: 12px;">
-                                    <h3>স্টক ইনভেন্টরি</h3>
-                                    ${currentUser.isOwner ? `<button onclick="addProduct()" class="btn" style="width: auto; font-size: 11px;">+ নতুন মাল</button>` : ''}
-                                </div>
-                                ${inventory.map(i => `
-                                    <div style="background: #0f172a; padding: 10px; border-radius:
+                                    <input type="password"
