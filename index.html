@@ -38,7 +38,6 @@
     </div>
 
     <script>
-        // সেফ ডেটা লেয়ার ইনিশিয়ালাইজেশন
         let db = null;
         try {
             const firebaseConfig = {
@@ -87,7 +86,6 @@
             }
         }
 
-        // ফায়ারবেস লিসেনার সেফ কানেকশন
         if (db) {
             const listen = (path, localKey, targetVar) => {
                 db.ref(path).on('value', (snap) => {
@@ -635,7 +633,6 @@
             }, () => { alert('লোকেশন পারমিশন অন করুন!'); });
         }
 
-        // ইনস্ট্যান্ট অন-লোড রেন্ডার এক্সিকিউশন
         window.addEventListener('DOMContentLoaded', render);
         render();
     </script>
