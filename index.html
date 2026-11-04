@@ -51,13 +51,13 @@
 
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', salary: 0, tiffin: 0, advance: 0 },
-            { id: 2, name: 'সহ-মালিক ২', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', salary: 0, tiffin: 0, advance: 0 },
-            { id: 3, name: 'সহ-মালিক ৩', role: 'মালিক', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', salary: 0, tiffin: 0, advance: 0 }
+            { id: 1, name: 'জাকির হোসেন', role: 'মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active' },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'মালিক', phone: '01700000002', code: '7772', isOwner: true, status: 'Active' },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'মালিক', phone: '01700000003', code: '7773', isOwner: true, status: 'Active' }
         ];
         let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
         let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [
-            { id: 1, text: 'হানিফ ডোর - জাকির লিমিটেডের নতুন স্পেশাল ড্যাশবোর্ডে স্বাগতম!', date: 'আজ' }
+            { id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেমে স্বাগতম!', date: 'আজ' }
         ];
         let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
             { id: 1, name: 'প্লাস্টিক ডোর (মডেল এ)', stock: 25, price: 3500 }
@@ -92,8 +92,8 @@
             if (!currentUser) {
                 app.innerHTML = `
                     <div class="card" style="max-width: 400px; margin: 30px auto;">
-                        <h2 style="color: #059669; text-align: center; margin-bottom: 5px;">Jakir - ltd</h2>
-                        <p style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 15px;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম</p>
+                        <h2 style="color: #059669; text-align: center; margin-bottom: 5px;">JAKIR LTD</h2>
+                        <p style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 15px;">হানিফ ডোর কারখানা ম্যানেজমেন্ট সিস্টেম</p>
 
                         <div style="display: flex; gap: 5px; margin-bottom: 15px;">
                             <button onclick="setAuthTab('login')" class="btn-sub" style="flex:1; ${authTab==='login'?'background:#059669;color:white;':''}">লগইন</button>
@@ -103,14 +103,14 @@
                         ${authTab === 'login' ? `
                             <label style="font-size: 12px; font-weight: bold;">মোবাইল নম্বর</label>
                             <input type="text" id="loginPhone" placeholder="017xxxxxxxx">
-                            <label style="font-size: 12px; font-weight: bold;">সিকিউরিটি কোড (মালিক বা পিনের জন্য)</label>
+                            <label style="font-size: 12px; font-weight: bold;">সিকিউরিটি কোড (মালিকের জন্য)</label>
                             <input type="password" id="loginCode" placeholder="কোড দিন">
                             <button onclick="login()" class="btn">প্রবেশ করুন</button>
                             <div style="font-size: 11px; color: #64748b; margin-top: 10px; background: #f1f5f9; padding: 8px; border-radius: 5px;">
                                 <strong>তিন মালিকের ডেমো নম্বর:</strong><br>
-                                ১. 01700000001 (কোড: 7771)<br>
-                                ২. 01700000002 (কোড: 7772)<br>
-                                ৩. 01700000003 (কোড: 7773)
+                                ১. জাকির হোসেন: 01700000001 (কোড: 7771)<br>
+                                ২. রফিকুল ইসলাম: 01700000002 (কোড: 7772)<br>
+                                ৩. আবু সাকের: 01700000003 (কোড: 7773)
                             </div>
                         ` : `
                             <div>
@@ -134,7 +134,7 @@
                 app.innerHTML = `
                     <div style="background: #0f172a; color: white; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <div>
-                            <h3 style="font-size: 14px; color: #34d399;">Jakir - ltd</h3>
+                            <h3 style="font-size: 14px; color: #34d399;">HANIF DOOR - JAKIR LTD</h3>
                             <p style="font-size: 11px;">${currentUser.name} (${currentUser.role})</p>
                         </div>
                         <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px;">লগআউট</button>
@@ -150,13 +150,13 @@
                     <div class="nav">
                         <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
                         <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল</button>
-                        <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 হাজিরা</button>
+                        <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 জিপিএস হাজিরা</button>
                         <button onclick="setTab('inventory')" class="btn-sub ${currentTab==='inventory'?'active':''}">📦 স্টক</button>
                         <button onclick="setTab('expense')" class="btn-sub ${currentTab==='expense'?'active':''}">💸 খরচ</button>
                         <button onclick="setTab('due')" class="btn-sub ${currentTab==='due'?'active':''}">📒 বাকি খাতা</button>
                         ${currentUser.isOwner ? `
                             <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}" style="position:relative; background:#059669; color:white;">
-                                👑 তিন মালিকের স্পেশাল ড্যাশবোর্ড
+                                👑 তিন মালিকের ড্যাশবোর্ড
                                 ${pendingCount > 0 ? `<span class="badge">${pendingCount}</span>` : ''}
                             </button>
                         ` : ''}
@@ -262,7 +262,7 @@
                     ${currentUser.isOwner && currentTab === 'owner' ? `
                         <div class="card" style="border: 2px solid #059669;">
                             <h3 style="color: #059669; margin-bottom: 5px;">👑 তিন মালিকের স্পেশাল কন্ট্রোল ড্যাশবোর্ড</h3>
-                            <p style="font-size: 11px; color: #64748b; margin-bottom: 15px;">এখানে তিন জন মালিকের সমান অধিকার রয়েছে এবং তারা যেকোনো কর্মীকে অনুমোদন ও বেতন সেট করতে পারবেন।</p>
+                            <p style="font-size: 11px; color: #64748b; margin-bottom: 15px;">চেয়ারম্যান জাকির হোসেন, ভাইস চেয়ারম্যান রফিকুল ইসলাম হৃদয় এবং প্রোপ্ৰাইটর আবু সাকের জীবনের সমান অধিকার ড্যাশবোর্ড।</p>
 
                             <h4 style="font-size: 13px; margin-bottom: 5px;">📢 নোটিশ প্রকাশ করুন</h4>
                             <textarea id="noticeText" rows="2" placeholder="নোটিশ লিখুন..."></textarea>
@@ -343,8 +343,6 @@
             alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
         }
 
-        function addновниry() {} // placeholder
-
         function addInventory() {
             const name = document.getElementById('invName').value.trim();
             const stock = Number(document.getElementById('invStock').value) || 0;
@@ -392,7 +390,7 @@
             staffList.forEach(s => { csvContent += `${s.name},${s.role},${s.phone},${s.salary}\n`; });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", "report.csv");
+            link.setAttribute("download", "hanif_door_report.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
