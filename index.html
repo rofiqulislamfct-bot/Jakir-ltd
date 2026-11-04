@@ -43,13 +43,14 @@
 
         let db = null;
         try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+            }
         } catch (e) {
-            console.error("Firebase Initialization Error:", e);
+            console.error("Firebase Init Error:", e);
         }
 
-        // নিরাপদ স্টেট ইনিশিয়ালাইজেশন
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
             { id: 1, name: 'জাকির হোসেন', role: 'মালিক', phone: '01700000001', code: '7771', isOwner: true, status: 'Active' },
@@ -58,7 +59,7 @@
         ];
         let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
         let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [
-            { id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড ম্যানেজমেন্ট সিস্টেমে স্বাগতম!', date: 'আজ' }
+            { id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড সিস্টেমে স্বাগতম!', date: 'আজ' }
         ];
         let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [
             { id: 1, name: 'প্লাস্টিক ডোর (মডেল এ)', stock: 25, price: 3500 }
@@ -69,16 +70,25 @@
         let authTab = 'login';
         let currentTab = 'home';
 
-        render();
+        // পেজ লোড হওয়ার সাথে সাথে রেন্ডার করা
+        try {
+            render();
+        } catch (err) {
+            console.error("Render Error:", err);
+            document.getElementById('app').innerHTML = `<div style="padding:20px; text-align:center; color:red;">সিস্টেম লোড হতে সমস্যা হয়েছে। দয়া করে পেজ রিফ্রেশ করুন।</div>`;
+        }
 
-        // ফায়ারবেস রিয়েল-টাইম সিঙ্ক লজিক
         if (db) {
-            db.ref('staffList').on('value', (snap) => { if (snap.exists()) { staffList = snap.val(); localStorage.setItem('hanif_staff', JSON.stringify(staffList)); render(); } });
-            db.ref('attendanceLogs').on('value', (snap) => { if (snap.exists()) { attendanceLogs = snap.val(); localStorage.setItem('hanif_attendance', JSON.stringify(attendanceLogs)); render(); } });
-            db.ref('notices').on('value', (snap) => { if (snap.exists()) { notices = snap.val(); localStorage.setItem('hanif_notices', JSON.stringify(notices)); render(); } });
-            db.ref('inventory').on('value', (snap) => { if (snap.exists()) { inventory = snap.val(); localStorage.setItem('hanif_inventory', JSON.stringify(inventory)); render(); } });
-            db.ref('expenses').on('value', (snap) => { if (snap.exists()) { expenses = snap.val(); localStorage.setItem('hanif_expenses', JSON.stringify(expenses)); render(); } });
-            db.ref('customers').on('value', (snap) => { if (snap.exists()) { customers = snap.val(); localStorage.setItem('hanif_customers', JSON.stringify(customers)); render(); } });
+            try {
+                db.ref('staffList').on('value', (snap) => { if (snap.exists()) { staffList = snap.val(); localStorage.setItem('hanif_staff', JSON.stringify(staffList)); render(); } });
+                db.ref('attendanceLogs').on('value', (snap) => { if (snap.exists()) { attendanceLogs = snap.val(); localStorage.setItem('hanif_attendance', JSON.stringify(attendanceLogs)); render(); } });
+                db.ref('notices').on('value', (snap) => { if (snap.exists()) { notices = snap.val(); localStorage.setItem('hanif_notices', JSON.stringify(notices)); render(); } });
+                db.ref('inventory').on('value', (snap) => { if (snap.exists()) { inventory = snap.val(); localStorage.setItem('hanif_inventory', JSON.stringify(inventory)); render(); } });
+                db.ref('expenses').on('value', (snap) => { if (snap.exists()) { expenses = snap.val(); localStorage.setItem('hanif_expenses', JSON.stringify(expenses)); render(); } });
+                db.ref('customers').on('value', (snap) => { if (snap.exists()) { customers = snap.val(); localStorage.setItem('hanif_customers', JSON.stringify(customers)); render(); } });
+            } catch (e) {
+                console.error("Firebase Sync Error:", e);
+            }
         }
 
         function syncData(path, data, localKey) {
@@ -90,6 +100,7 @@
 
         function render() {
             const app = document.getElementById('app');
+            if (!app) return;
             const pendingStaffs = staffList.filter(s => s.status === 'Pending');
             const pendingCount = pendingStaffs.length;
 
@@ -239,3 +250,211 @@
                                 <tr><th>তারিখ</th><th>বিবরণ</th><th>টাকা</th></tr>
                                 ${expenses.map(e => `<tr><td>${e.date}</td><td>${e.reason}</td><td>৳${e.amount}</td></tr>`).join('')}
                             </table>
+                        </div>
+                    ` : ''}
+
+                    ${currentTab === 'due' ? `
+                        <div class="card">
+                            <h3 style="color: #059669; margin-bottom: 10px;">📒 বাকি খাতা</h3>
+                            <div style="background: #f1f5f9; padding: 8px; border-radius: 5px; margin-bottom: 10px;">
+                                <input type="text" id="custName" placeholder="গ্রাহকের নাম ও ফোন">
+                                <input type="number" id="dueAmount" placeholder="বাকি টাকা ৳">
+                                <button onclick="addCustomerDue()" class="btn" style="padding: 6px;">বাকি যোগ করুন</button>
+                            </div>
+                            <table>
+                                <tr><th>গ্রাহক</th><th>বাকি</th><th>অ্যাকশন</th></tr>
+                                ${customers.map(c => `
+                                    <tr>
+                                        <td>${c.name}</td>
+                                        <td>৳${c.due}</td>
+                                        <td><button onclick="payDue(${c.id})" class="btn-sub" style="background:#059669; color:white; padding:3px 6px;">পরিশোধ</button></td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    ` : ''}
+
+                    ${currentUser.isOwner && currentTab === 'owner' ? `
+                        <div class="card" style="border: 2px solid #059669;">
+                            <h3 style="color: #059669; margin-bottom: 5px;">👑 তিন মালিকের স্পেশাল কন্ট্রোল ড্যাশবোর্ড</h3>
+                            <p style="font-size: 11px; color: #64748b; margin-bottom: 15px;">চেয়ারম্যান জাকির হোসেন, ভাইস চেয়ারম্যান রফিকুল ইসলাম হৃদয় এবং প্রোপ্ৰাইটর আবু সাকের জীবনের সমান অধিকার ড্যাশবোর্ড।</p>
+
+                            <h4 style="font-size: 13px; margin-bottom: 5px;">📢 নোটিশ প্রকাশ করুন</h4>
+                            <textarea id="noticeText" rows="2" placeholder="নোটিশ লিখুন..."></textarea>
+                            <button onclick="postNotice()" class="btn" style="margin-bottom: 15px; padding: 6px;">নোটিশ পোস্ট করুন</button>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="font-size: 13px;">কর্মী ও পে-রোল ম্যানেজমেন্ট</h4>
+                                <button onclick="exportToCSV()" class="btn btn-blue" style="width: auto; padding: 6px 10px; font-size: 11px;">📥 রিপোর্ট (Excel)</button>
+                            </div>
+                            
+                            ${staffList.map(s => {
+                                const userLogs = attendanceLogs.filter(l => l.phone === s.phone);
+                                const totalDays = userLogs.filter(l => l.type === 'Check-In').length;
+                                const netPayable = (totalDays * (s.salary ? Math.round(s.salary/30) : 0)) - (s.advance || 0);
+
+                                return `
+                                    <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 12px; border-left: 4px solid ${s.status==='Pending'?'#dc2626':'#059669'};">
+                                        <p><strong>নাম:</strong> ${s.name} | পদবি: <strong>${s.role}</strong></p>
+                                        <p>ফোন: ${s.phone} | উপস্থিতি: ${totalDays} দিন</p>
+                                        
+                                        ${s.status === 'Pending' ? `
+                                            <div style="margin-top: 8px; background: #fff; padding: 8px; border-radius: 5px; border: 1px solid #cbd5e1;">
+                                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                                    <input type="number" id="sal_${s.id}" placeholder="মাসিক বেতন ৳">
+                                                    <input type="number" id="tif_${s.id}" placeholder="নাস্তা বিল ৳">
+                                                </div>
+                                                <button onclick="approveStaff(${s.id})" class="btn" style="margin-top: 5px; padding: 6px;">✅ অনুমোদন দিন</button>
+                                            </div>
+                                        ` : `
+                                            <p style="margin-top:5px; color:#059669;"><strong>পাওনা: ৳${netPayable > 0 ? netPayable : 0}</strong></p>
+                                        `}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+
+        function setAuthTab(t) { authTab = t; render(); }
+        function setTab(t) { currentTab = t; render(); }
+
+        function login() {
+            const phoneInput = document.getElementById('loginPhone');
+            const codeInput = document.getElementById('loginCode');
+            if (!phoneInput || !codeInput) return;
+
+            const phone = phoneInput.value.trim();
+            const code = codeInput.value.trim();
+            const user = staffList.find(s => s.phone === phone);
+
+            if (!user) { alert('এই নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি!'); return; }
+            if (user.status === 'Pending') { alert('আপনার অ্যাকাউন্টটি অনুমোদনের অপেক্ষায় রয়েছে!'); return; }
+            if (user.isOwner && user.code !== code) { alert('ভুল সিকিউরিটি কোড!'); return; }
+
+            currentUser = user;
+            localStorage.setItem('hanif_user', JSON.stringify(currentUser));
+            render();
+        }
+
+        function registerStaff() {
+            const nameInput = document.getElementById('regName');
+            const phoneInput = document.getElementById('regPhone');
+            const roleInput = document.getElementById('regRole');
+            if (!nameInput || !phoneInput || !roleInput) return;
+
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            const role = roleInput.value;
+
+            if (!name || phone.length !== 11) { alert('সঠিক নাম ও ১১ ডিজিটের মোবাইল নম্বর দিন!'); return; }
+            if (staffList.some(s => s.phone === phone)) { alert('এই নম্বর দিয়ে আগেই আবেদন করা হয়েছে!'); return; }
+
+            staffList.push({ id: Date.now(), name, role, phone, code: '', isOwner: false, status: 'Pending', salary: 0, tiffin: 0, advance: 0 });
+            syncData('staffList', staffList, 'hanif_staff');
+            alert('নিবন্ধনের আবেদন পাঠানো হয়েছে!');
+            setAuthTab('login');
+        }
+
+        function approveStaff(id) {
+            const salEl = document.getElementById(`sal_${id}`);
+            const tifEl = document.getElementById(`tif_${id}`);
+            const salInput = salEl ? Number(salEl.value) || 0 : 0;
+            const tifInput = tifEl ? Number(tifEl.value) || 0 : 0;
+
+            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', salary: salInput, tiffin: tifInput} : s);
+            syncData('staffList', staffList, 'hanif_staff');
+            alert('কর্মী সফলভাবে অনুমোদিত হয়েছে!');
+        }
+
+        function addInventory() {
+            const nameEl = document.getElementById('invName');
+            const stockEl = document.getElementById('invStock');
+            const priceEl = document.getElementById('invPrice');
+            if (!nameEl) return;
+
+            const name = nameEl.value.trim();
+            const stock = Number(stockEl.value) || 0;
+            const price = Number(priceEl.value) || 0;
+
+            if (!name) { alert('পণ্যের নাম দিন!'); return; }
+            inventory.push({ id: Date.now(), name, stock, price });
+            syncData('inventory', inventory, 'hanif_inventory');
+            alert('স্টক যুক্ত হয়েছে!');
+        }
+
+        function addExpense() {
+            const reasonEl = document.getElementById('expReason');
+            const amountEl = document.getElementById('expAmount');
+            if (!reasonEl) return;
+
+            const reason = reasonEl.value.trim();
+            const amount = Number(amountEl.value) || 0;
+
+            if (!reason || amount <= 0) { alert('সঠিক তথ্য দিন!'); return; }
+            expenses.push({ id: Date.now(), date: new Date().toLocaleDateString('bn-BD'), reason, amount });
+            syncData('expenses', expenses, 'hanif_expenses');
+            alert('খরচ এন্ট্রি হয়েছে!');
+        }
+
+        function addCustomerDue() {
+            const nameEl = document.getElementById('custName');
+            const dueEl = document.getElementById('dueAmount');
+            if (!nameEl) return;
+
+            const name = nameEl.value.trim();
+            const due = Number(dueEl.value) || 0;
+
+            if (!name || due <= 0) { alert('সঠিক তথ্য দিন!'); return; }
+            customers.push({ id: Date.now(), name, due });
+            syncData('customers', customers, 'hanif_customers');
+            alert('বাকি খাতা এন্ট্রি হয়েছে!');
+        }
+
+        function payDue(id) {
+            customers = customers.filter(c => c.id !== id);
+            syncData('customers', customers, 'hanif_customers');
+            alert('বাকি পরিশোধ সম্পন্ন হয়েছে!');
+        }
+
+        function postNotice() {
+            const textEl = document.getElementById('noticeText');
+            if (!textEl) return;
+
+            const text = textEl.value.trim();
+            if (!text) { alert('নোটিশ লিখুন!'); return; }
+            notices.unshift({ id: Date.now(), text, date: new Date().toLocaleDateString('bn-BD') });
+            syncData('notices', notices, 'hanif_notices');
+            alert('নোটিশ প্রকাশিত হয়েছে!');
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Name,Role,Phone,Salary\n";
+            staffList.forEach(s => { csvContent += `${s.name},${s.role},${s.phone},${s.salary}\n`; });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "hanif_door_report.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function logout() { 
+            localStorage.removeItem('hanif_user'); 
+            currentUser = null; 
+            render(); 
+        }
+
+        function recordAttendance(type) {
+            if (!navigator.geolocation) { alert('লোকেশন সমর্থিত নয়!'); return; }
+            navigator.geolocation.getCurrentPosition((pos) => {
+                attendanceLogs.push({ name: currentUser.name, phone: currentUser.phone, type, time: new Date().toLocaleString('bn-BD') });
+                syncData('attendanceLogs', attendanceLogs, 'hanif_attendance');
+                alert(type + ' সফল হয়েছে!');
+            }, () => { alert('লোকেশন পারমিশন অন করুন!'); });
+        }
+    </script>
+</body>
+</html>
