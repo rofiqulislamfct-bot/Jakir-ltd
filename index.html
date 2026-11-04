@@ -10,28 +10,30 @@
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        body { background: #f1f5f9; color: #0f172a; padding: 12px; font-size: 14px; line-height: 1.5; }
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-        .btn { background: #059669; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 8px; }
+        body { background: #f1f5f9; color: #0f172a; padding: 10px; font-size: 13px; line-height: 1.4; }
+        .card { background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .btn { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 6px; font-size: 13px; }
         .btn-red { background: #dc2626; }
         .btn-blue { background: #2563eb; }
-        .btn-sub { background: #e2e8f0; color: #0f172a; border: none; padding: 10px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; position: relative; white-space: nowrap; }
+        .btn-sub { background: #e2e8f0; color: #0f172a; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; white-space: nowrap; }
         .btn-sub.active { background: #059669; color: white; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 6px 0 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: #fff; }
-        .nav { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
-        .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-        .profile-avatar { width: 65px; height: 65px; border-radius: 50%; background: #059669; color: white; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: bold; border: 3px solid #10b981; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 4px 0 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; }
+        .nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
+        .profile-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .profile-avatar { width: 50px; height: 50px; border-radius: 50%; background: #059669; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="app">
-        <div style="text-align: center; padding: 50px 20px; color: #059669;">
-            <h2>JAKIR LTD</h2>
-            <p style="color: #64748b; margin-top: 8px;">সিস্টেম লোড হচ্ছে...</p>
+        <div style="text-align: center; padding: 40px; color: #059669;">
+            <h3>JAKIR LTD</h3>
+            <p style="color: #64748b; font-size: 12px; margin-top: 5px;">লোড হচ্ছে...</p>
         </div>
     </div>
 
     <script>
+        // সেফ ফায়ারবেস ইনিশিয়ালাইজেশন
         let db = null;
         try {
             const firebaseConfig = {
@@ -43,17 +45,23 @@
                 messagingSenderId: "235034327378",
                 appId: "1:235034327378:web:a3233b7fe27a2f9436a28b"
             };
-            if (window.firebase) {
+            if (window.firebase && !firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.database();
+            } else if (window.firebase) {
+                db = firebase.database();
             }
-        } catch (e) { console.warn(e); }
+        } catch (e) {
+            console.warn("Firebase Init Error:", e);
+        }
 
+        // লোকাল ডাটা ও ডিফল্ট স্টেট
         let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
         let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
-            { id: 1, name: 'জাকির হোসেন', role: 'চেয়ারম্যান (মালিক)', phone: '01700000001', code: '7771', isOwner: true, status: 'Active' },
-            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'ভাইস চেয়ারম্যান (মালিক)', phone: '01700000002', code: '7772', isOwner: true, status: 'Active' },
-            { id: 3, name: 'আবু সাকের জীবন', role: 'প্রোপ্ৰাইটর (মালিক)', phone: '01700000003', code: '7773', isOwner: true, status: 'Active' }
+            { id: 1, name: 'জাকির হোসেন', role: 'চেয়ারম্যান (মালিক)', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', attendance: 14, productionAvg: 160 },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'ভাইস চেয়ারম্যান (মালিক)', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', attendance: 15, productionAvg: 165 },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'প্রোপ্ৰাইটর (মালিক)', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', attendance: 14, productionAvg: 155 },
+            { id: 4, name: 'মোঃ রহিম আলী', role: 'প্রধান কর্মী', phone: '01700000004', code: '', isOwner: false, status: 'Active', attendance: 14, productionAvg: 160, joinDate: '১৯-২০-২৯' }
         ];
 
         let authTab = 'login';
@@ -66,93 +74,157 @@
 
                 if (!currentUser) {
                     app.innerHTML = `
-                        <div class="card" style="max-width: 400px; margin: 30px auto;">
+                        <div class="card" style="max-width: 400px; margin: 20px auto;">
                             <h2 style="color: #059669; text-align: center; margin-bottom: 5px;">JAKIR LTD</h2>
-                            <p style="font-size: 12px; color: #64748b; text-align: center; margin-bottom: 15px;">হানিফ ডোর কারখানা ম্যানেজমেন্ট সিস্টেম</p>
+                            <p style="font-size: 11px; color: #64748b; text-align: center; margin-bottom: 12px;">হানিফ ডোর কারখানা ম্যানেজমেন্ট সিস্টেম</p>
 
-                            <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                            <div style="display: flex; gap: 5px; margin-bottom: 12px;">
                                 <button onclick="setAuthTab('login')" class="btn-sub" style="flex:1; ${authTab==='login'?'background:#059669;color:white;':''}">লগইন</button>
-                                <button onclick="setAuthTab('register')" class="btn-sub" style="flex:1; ${authTab==='register'?'background:#059669;color:white;':''}">রেজিস্ট्रেশন</button>
+                                <button onclick="setAuthTab('register')" class="btn-sub" style="flex:1; ${authTab==='register'?'background:#059669;color:white;':''}">রেজিস্ট্রেশন</button>
                             </div>
 
                             ${authTab === 'login' ? `
-                                <label style="font-weight: bold;">মোবাইল নম্বর</label>
+                                <label style="font-size: 11px; font-weight: bold;">মোবাইল নম্বর</label>
                                 <input type="text" id="loginPhone" placeholder="017xxxxxxxx">
-                                <label style="font-weight: bold;">সিকিউরিটি কোড (মালিকের জন্য)</label>
+                                <label style="font-size: 11px; font-weight: bold;">সিকিউরিটি কোড (মালিকের জন্য)</label>
                                 <input type="password" id="loginCode" placeholder="কোড দিন">
                                 <button onclick="login()" class="btn">প্রবেশ করুন</button>
-                                <div style="font-size: 11px; color: #64748b; margin-top: 10px; background: #f1f5f9; padding: 8px; border-radius: 5px;">
-                                    <strong>ডেমো নম্বর:</strong> 01700000001 (কোড: 7771)
+                                <div style="font-size: 10px; color: #64748b; margin-top: 8px; background: #f1f5f9; padding: 6px; border-radius: 4px;">
+                                    <strong>ডেমো মালিক নম্বর:</strong> 01700000001 (কোড: 7771)
                                 </div>
                             ` : `
                                 <div>
-                                    <label style="font-weight: bold;">আপনার পূর্ণ নাম</label>
+                                    <label style="font-size: 11px; font-weight: bold;">আপনার পূর্ণ নাম</label>
                                     <input type="text" id="regName" placeholder="নাম লিখুন">
-                                    <label style="font-weight: bold;">মোবাইল নম্বর</label>
+                                    <label style="font-size: 11px; font-weight: bold;">মোবাইল নম্বর</label>
                                     <input type="text" id="regPhone" placeholder="017xxxxxxxx">
-                                    <button onclick="alert('আবেদন পাঠানো হয়েছে!')" class="btn">আবেদন পাঠান</button>
+                                    <button onclick="alert('নিবন্ধনের আবেদন সফলভাবে পাঠানো হয়েছে!')" class="btn">আবেদন পাঠান</button>
                                 </div>
                             `}
                         </div>
                     `;
                 } else {
                     app.innerHTML = `
-                        <div style="background: #0f172a; color: white; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="background: #0f172a; color: white; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <div>
-                                <h3 style="font-size: 15px; color: #34d399;">HANIF DOOR - JAKIR LTD</h3>
-                                <p style="font-size: 12px; color: #cbd5e1;">${currentUser.name} (${currentUser.role})</p>
+                                <h3 style="font-size: 13px; color: #34d399;">HANIF DOOR - JAKIR LTD</h3>
+                                <p style="font-size: 11px; color: #cbd5e1;">${currentUser.name} (${currentUser.role})</p>
                             </div>
-                            <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 6px 12px; font-size: 12px;">লগআউট</button>
+                            <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px; margin:0;">লগআউট</button>
                         </div>
 
                         <div class="nav">
                             <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
-                            <button onclick="setTab('profile')" class="btn-sub ${currentTab==='profile'?'active':''}">👤 প্রোফাইল</button>
-                            <button onclick="setTab('settings')" class="btn-sub ${currentTab==='settings'?'active':''}">⚙️ সেটিং</button>
+                            <button onclick="setTab('profiles')" class="btn-sub ${currentTab==='profiles'?'active':''}">👥 প্রোফাইল প্যানেল</button>
+                            <button onclick="setTab('settings')" class="btn-sub ${currentTab==='settings'?'active':''}">⚙️ অ্যাপ সেটিং</button>
                         </div>
 
                         ${currentTab === 'home' ? `
                             <div class="card">
                                 <h3>স্বাগতম, ${currentUser.name}!</h3>
-                                <p style="margin-top:5px; color:#64748b;">হানিফ ডোর ম্যানেজমেন্ট সিস্টেম সফলভাবে সচল রয়েছে।</p>
+                                <p style="font-size: 12px; color: #64748b; margin-top: 4px;">হানিফ ডোর কারখানা ম্যানেজমেন্ট সিস্টেম সচল রয়েছে। উপরের মেনু থেকে 'প্রোফাইল প্যানেল' বা 'অ্যাপ সেটিং' এ ক্লিক করুন।</p>
                             </div>
                         ` : ''}
 
-                        ${currentTab === 'profile' ? `
-                            <div class="card">
-                                <div class="profile-header">
-                                    <div class="profile-avatar">${currentUser.name.charAt(0)}</div>
-                                    <div>
-                                        <h2 style="color: #0f172a; font-size: 18px;">${currentUser.name} <span style="color: #059669;">✔</span></h2>
-                                        <p style="font-size: 13px; color: #64748b; font-weight: bold;">${currentUser.role} — জাকির লিমিটেড</p>
+                        ${currentTab === 'profiles' ? `
+                            <div>
+                                <h3 style="color: #059669; margin-bottom: 8px; font-size: 14px;">👑 মালিক ও কর্মচারী প্রোফাইল</h3>
+                                
+                                <!-- মালিক প্রোফাইল কার্ড -->
+                                <div class="profile-card" style="border-left: 4px solid #059669;">
+                                    <div class="profile-header">
+                                        <div class="profile-avatar">জ</div>
+                                        <div>
+                                            <h4 style="font-size: 14px; color: #0f172a;">জাকির হোসেন <span style="color: #059669;">✔</span></h4>
+                                            <p style="font-size: 11px; color: #64748b;">চেয়ারম্যান, জাকির লিমিটেড</p>
+                                        </div>
+                                    </div>
+                                    <p style="font-size: 11px; color: #334155; margin-top: 4px;">📞 পোস্টিং: জাকির লিমিটেড | ✉️ জেনভেন্ট: +911875563309</p>
+                                    <div style="display:flex; gap:6px; margin-top:8px;">
+                                        <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="alert('ড্যাশবোর্ড ওপেন হয়েছে')">👑 ড্যাশবোর্ড</button>
+                                        <button class="btn-sub" style="background:#2563eb; color:white; flex:1;" onclick="alert('ম্যানেজ স্টাফ প্যানেল')">⚙️ ম্যানেজ স্টাফ</button>
                                     </div>
                                 </div>
-                                <hr style="border:0; border-top:1px solid #e2e8f0; margin:12px 0;">
-                                <p style="margin-top: 6px; font-size: 13px;"><strong>মোবাইল নম্বর:</strong> ${currentUser.phone}</p>
-                                <p style="margin-top: 4px; font-size: 13px;"><strong>কারখানা:</strong> হানিফ ডোর, মহিপাল, ফেনী</p>
-                                <p style="margin-top: 4px; font-size: 13px;"><strong>স্ট্যাটাস:</strong> <span style="color: #059669; font-weight: bold;">সক্রিয় (Active)</span></p>
 
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px;">
-                                    <a href="tel:${currentUser.phone}" class="btn btn-blue" style="text-align:center; text-decoration:none; padding: 10px; display:block;">📞 কল করুন</a>
-                                    <a href="https://wa.me/" target="_blank" class="btn" style="background: #25d366; text-align:center; text-decoration:none; padding: 10px; display:block;">💬 ওয়াটসঅ্যাপ</a>
-                                </div>
+                                <!-- কর্মী প্রোফাইল কার্ড -->
+                                ${(staffList || []).filter(s => !s.isOwner).map(s => `
+                                    <div class="profile-card" style="border-left: 4px solid #2563eb;">
+                                        <div class="profile-header">
+                                            <div class="profile-avatar" style="background:#2563eb;">${s.name.charAt(0)}</div>
+                                            <div>
+                                                <h4 style="font-size: 14px; color: #0f172a;">${s.name}</h4>
+                                                <p style="font-size: 11px; color: #64748b;">${s.role}</p>
+                                            </div>
+                                        </div>
+                                        <p style="font-size: 11px; color: #334155; margin-top: 4px;">কারখানা শুরু তারিখ: ${s.joinDate || '১৯-২০-২৯'} | টোটাল হাজিরা: ${s.attendance || 14} দিন</p>
+                                        <p style="font-size: 11px; color: #334155; margin-top: 2px;">প্রতিদিন উৎপাদন এভারেজ: ${s.productionAvg || 160} পিস</p>
+                                        <div style="display:flex; gap:6px; margin-top:8px;">
+                                            <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="alert('হাজিরা দেখা হচ্ছে')">✅ হাজিরা</button>
+                                            <button class="btn-sub" style="background:#2563eb; color:white; flex:1;" onclick="alert('উৎপাদন রিপোর্ট')">🏗️ উৎপাদন রিপোর্ট</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
                         ` : ''}
 
                         ${currentTab === 'settings' ? `
                             <div class="card">
-                                <h3 style="color: #059669; margin-bottom: 12px; font-size: 16px;">⚙️ সেটিং ও নিরাপত্তা প্যানেল</h3>
-                                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border:1px solid #e2e8f0;">
-                                    <p style="font-weight: bold; margin-bottom: 6px;">🔐 সিকিউরিটি পিন পরিবর্তন</p>
+                                <h3 style="color: #059669; margin-bottom: 10px; font-size: 14px;">⚙️ সেটিং ও নিরাপত্তা প্যানেল</h3>
+                                
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🔐 পিন কোড পরিবর্তন</p>
                                     <input type="password" placeholder="পুরাতন পিন/কোড">
                                     <input type="password" placeholder="নতুন পিন/কোড">
-                                    <button onclick="alert('পিন কোড সফলভাবে আপডেট হয়েছে!')" class="btn" style="padding: 10px;">পিন পরিবর্তন করুন</button>
+                                    <button onclick="alert('পিন কোড সফলভাবে পরিবর্তিত হয়েছে!')" class="btn" style="padding: 8px;">পিন পরিবর্তন করুন</button>
                                 </div>
 
-                                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 12px; border:1px solid #e2e8f0;">
-                                    <p style="font-weight: bold; margin-bottom: 6px;">🌍 ভাষা পরিবর্তন (Language)</p>
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🌍 ভাষা পরিবর্তন (Language)</p>
                                     <select><option value="bn" selected>বাংলা (Bangla)</option><option value="en">English</option></select>
+                                </div>
+
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🔔 নোটিফিকেশন অ্যালার্ট</p>
+                                    <label style="display: block; font-size: 12px; margin-top: 4px;"><input type="checkbox" checked> অর্ডার অ্যালার্ট</label>
+                                    <label style="display: block; font-size: 12px; margin-top: 4px;"><input type="checkbox" checked> ডেলিভারি আপডেট</label>
                                 </div>
                             </div>
                         ` : ''}
                     `;
+                }
+            } catch (err) {
+                console.error("Critical Render Error:", err);
+            }
+        }
+
+        function setAuthTab(t) { authTab = t; render(); }
+        function setTab(t) { currentTab = t; render(); }
+
+        function login() {
+            const phoneInput = document.getElementById('loginPhone');
+            const codeInput = document.getElementById('loginCode');
+            if (!phoneInput || !codeInput) return;
+
+            const phone = phoneInput.value.trim();
+            const code = codeInput.value.trim();
+            const user = staffList.find(s => s.phone === phone);
+
+            if (!user) { alert('নম্বর পাওয়া যায়নি!'); return; }
+            if (user.isOwner && user.code !== code) { alert('ভুল পিন কোড!'); return; }
+
+            currentUser = user;
+            localStorage.setItem('hanif_user', JSON.stringify(currentUser));
+            render();
+        }
+
+        function logout() {
+            localStorage.removeItem('hanif_user');
+            currentUser = null;
+            render();
+        }
+
+        window.addEventListener('DOMContentLoaded', render);
+        render();
+    </script>
+</body>
+</html>
