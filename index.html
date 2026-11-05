@@ -29,7 +29,6 @@
         th { background: #f1f5f9; }
         .notice-card { background: #fef3c7; border: 1px solid #f59e0b; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; color: #92400e; }
         
-        /* কালার প্রিন্ট চালান স্টাইল */
         @media print {
             body * { visibility: hidden; }
             #printableChallan, #printableChallan * { visibility: visible; }
@@ -83,7 +82,7 @@
         ];
 
         let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
-        let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [{ id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড নতুন ফিচারে আপডেট হয়েছে!', date: 'আজ' }];
+        let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [{ id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড সিস্টেমে স্বাগতম!', date: 'আজ' }];
         let orders = JSON.parse(localStorage.getItem('hanif_orders')) || [];
         let advanceRequests = JSON.parse(localStorage.getItem('hanif_adv_requests')) || [];
         let chatMessages = JSON.parse(localStorage.getItem('hanif_chats')) || [];
@@ -234,9 +233,9 @@
                                         <p style="font-size:11px; color:#64748b;">${currentUser.role} | ${currentUser.phone}</p>
                                     </div>
                                 </div>
-                                <label style="font-size:11px; font-weight:bold;">প্রোফাইল ছবি আপলোড (URL বা ফাইল)</label>
-                                <input type="text" id="upPhotoUrl" placeholder="ছবির ইমেজ লিংক দিন (https://...)">
-                                <button onclick="updateProfilePhoto()" class="btn">প্রোফাইল ছবি সংরক্ষণ করুন</button>
+                                <label style="font-size:11px; font-weight:bold;">মোবাইল থেকে গ্যালারি বা ক্যামেরা দিয়ে ছবি সিলেক্ট করুন</label>
+                                <input type="file" id="upPhotoFile" accept="image/*" style="font-size:11px;">
+                                <button onclick="uploadProfilePhoto()" class="btn">প্রোফাইল ছবি সেভ করুন</button>
                             </div>
                         ` : ''}
 
@@ -257,8 +256,9 @@
                                 <input type="text" id="ordCust" placeholder="কাস্টমারের নাম ও ফোন">
                                 <input type="text" id="ordAddr" placeholder="ডেলিভারি ঠিকানা">
                                 <input type="text" id="ordProduct" placeholder="পণ্যের বিবরণ (যেমন: প্লাস্টিক ডোর)">
-                                <input type="text" id="ordPhoto" placeholder="পণ্যের ছবির লিংক (ঐচ্ছিক)">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                <label style="font-size:11px; font-weight:bold; display:block; margin-top:4px;">পণ্যের ছবি (গ্যালারি থেকে)</label>
+                                <input type="file" id="ordPhotoFile" accept="image/*" style="font-size:11px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top:5px;">
                                     <input type="number" id="ordQty" placeholder="পরিমাণ (টি)">
                                     <input type="number" id="ordTotal" placeholder="মোট দাম ৳">
                                 </div>
@@ -279,6 +279,7 @@
                                         </div>
                                         <p style="font-size:11px;"><strong>কাস্টমার:</strong> ${o.cust} (${o.addr})</p>
                                         <p style="font-size:11px;"><strong>পণ্য:</strong> ${o.product} (${o.qty} পিস)</p>
+                                        ${o.productPhoto ? `<img src="${o.productPhoto}" style="width:60px; height:60px; object-fit:cover; border-radius:4px; margin-top:4px;">` : ''}
                                         <p style="font-size:11px;"><strong>অর্ডার তারিখ:</strong> ${o.orderDate} | <strong>ডেলিভারি:</strong> ${o.deliveryDate} (${o.deliveryTime})</p>
                                         <p style="font-size:11px;"><strong>টাকা:</strong> মোট ৳${o.total} | অ্যাডভান্স ৳${o.adv} | বাকি ৳${o.total - o.adv}</p>
                                         <button onclick="printChallan('${o.memo}')" class="btn btn-blue" style="padding:6px; font-size:11px; margin-top:6px;">🖨️ কালার প্রিন্ট চালান</button>
@@ -395,30 +396,48 @@
             setAuthTab('login');
         }
 
-        function updateProfilePhoto() {
-            const url = document.getElementById('upPhotoUrl').value.trim();
-            if (!url) { alert('ছবির লিংক দিন!'); return; }
-            currentUser.photo = url;
-            staffList = staffList.map(s => s.phone === currentUser.phone ? currentUser : s);
-            safeSync('staffList', staffList, 'hanif_staff');
-            localStorage.setItem('hanif_user', JSON.stringify(currentUser));
-            alert('প্রোফাইল ছবি আপডেট হয়েছে!');
-            render();
+        function uploadProfilePhoto() {
+            const fileInput = document.getElementById('upPhotoFile');
+            if (!fileInput.files || !fileInput.files[0]) { alert('দয়া করে একটি ছবি সিলেক্ট করুন!'); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentUser.photo = e.target.result;
+                staffList = staffList.map(s => s.phone === currentUser.phone ? currentUser : s);
+                safeSync('staffList', staffList, 'hanif_staff');
+                localStorage.setItem('hanif_user', JSON.stringify(currentUser));
+                alert('প্রোফাইল ছবি সফলভাবে আপডেট হয়েছে!');
+                render();
+            };
+            reader.readAsDataURL(fileInput.files[0]);
         }
 
         function createOrder() {
             const cust = document.getElementById('ordCust').value.trim();
             const addr = document.getElementById('ordAddr').value.trim();
             const product = document.getElementById('ordProduct').value.trim();
-            const productPhoto = document.getElementById('ordPhoto').value.trim();
             const total = Number(document.getElementById('ordTotal').value) || 0;
             const adv = Number(document.getElementById('ordAdv').value) || 0;
             const orderDate = document.getElementById('ordDate').value;
             const deliveryDate = document.getElementById('delivDate').value;
             const deliveryTime = document.getElementById('delivTime').value.trim();
+            const fileInput = document.getElementById('ordPhotoFile');
 
             if (!cust || !product || total <= 0) { alert('সঠিক তথ্য দিন!'); return; }
+
             const memo = Math.floor(1000 + Math.random() * 9000);
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveOrderData(memo, cust, addr, product, e.target.result, total, adv, orderDate, deliveryDate, deliveryTime);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                saveOrderData(memo, cust, addr, product, '', total, adv, orderDate, deliveryDate, deliveryTime);
+            }
+        }
+
+        function saveOrderData(memo, cust, addr, product, productPhoto, total, adv, orderDate, deliveryDate, deliveryTime) {
             orders.unshift({ id: Date.now().toString(), memo, cust, addr, product, productPhoto, total, adv, orderDate, deliveryDate, deliveryTime, delivered: false });
             safeSync('orders', orders, 'hanif_orders');
             alert('অর্ডার সফলভাবে সেভ হয়েছে এবং প্রধান কর্মী ও ড্রাইভারের কাছে পাঠানো হয়েছে! মেমো #' + memo);
@@ -443,7 +462,7 @@
                         <p><strong>অর্ডার তারিখ:</strong> ${o.orderDate} | <strong>ডেলিভারি তারিখ:</strong> ${o.deliveryDate} (${o.deliveryTime})</p>
                         <table style="width:100%; border-collapse:collapse; margin-top:15px;">
                             <tr><th style="border:1px solid #cbd5e1; padding:8px; background:#f1f5f9;">পণ্যের বিবরণ</th><th style="border:1px solid #cbd5e1; padding:8px; background:#f1f5f9;">পরিমাণ</th><th style="border:1px solid #cbd5e1; padding:8px; background:#f1f5f9;">মোট দাম</th></tr>
-                            <tr><td style="border:1px solid #cbd5e1; padding:8px;">${o.product}</td><td style="border:1px solid #cbd5e1; padding:8px;">${o.qty} পিস</td><td style="border:1px solid #cbd5e1; padding:8px;">৳${o.total}</td></tr>
+                            <tr><td style="border:1px solid #cbd5e1; padding:8px;">${o.product}</td><td style="border:1px solid #cbd5e1; padding:8px;">${o.qty || 1} পিস</td><td style="border:1px solid #cbd5e1; padding:8px;">৳${o.total}</td></tr>
                         </table>
                         <p style="margin-top: 15px;"><strong>অ্যাডভান্স পরিশোধ:</strong> ৳${o.adv}</p>
                         <p><strong>বাকি পাওনা:</strong> ৳${o.total - o.adv}</p>
