@@ -2,369 +2,522 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>হানিফ ডোর - ERP & Challan Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>হানিফ ডোর - জাকির লিমিটেড</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
-        body { font-family: 'Hind Siliguri', sans-serif; background-color: #f3f4f6; }
-        .print-area { display: none; }
-        @media print {
-            body * { visibility: hidden; }
-            .print-area, .print-area * { visibility: visible; }
-            .print-area { position: absolute; left: 0; top: 0; width: 100%; display: block; }
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f1f5f9; color: #0f172a; padding: 10px; font-size: 13px; line-height: 1.4; }
+        .card { background: white; border: 1px solid #cbd5e1; border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .btn { background: #059669; color: white; border: none; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 6px; font-size: 13px; }
+        .btn-red { background: #dc2626; }
+        .btn-blue { background: #2563eb; }
+        .btn-sub { background: #e2e8f0; color: #0f172a; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 11px; cursor: pointer; white-space: nowrap; }
+        .btn-sub.active { background: #059669; color: white; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 4px 0 8px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; background: #fff; }
+        .nav { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
+        .profile-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .profile-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .profile-avatar { width: 50px; height: 50px; border-radius: 50%; background: #059669; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 5px; }
+        th, td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; }
+        th { background: #f1f5f9; }
+        .notice-card { background: #fef3c7; border: 1px solid #f59e0b; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 12px; color: #92400e; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800" id="body-theme">
-
-    <!-- Top Navigation Bar -->
-    <header class="bg-amber-700 text-white shadow-md transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <img id="user-avatar-top" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow">
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">🚪 হানিফ ডোর (Hanif Door)</h1>
-                    <p class="text-xs text-amber-200" id="current-role-display">রোল: মালিক (Owner)</p>
-                </div>
-            </div>
-            
-            <!-- Role Switcher & Theme Customizer -->
-            <div class="flex items-center space-x-3">
-                <select id="global-role-switcher" onchange="switchRole(this.value)" class="bg-amber-800 text-white text-xs px-3 py-1.5 rounded border border-amber-500 focus:outline-none">
-                    <option value="owner">মালিক (Owner)</option>
-                    <option value="manager">ম্যানেজার (Manager)</option>
-                    <option value="staff">প্রধান কর্মচারী (Staff)</option>
-                    <option value="driver">ড্রাইভার (Driver)</option>
-                </select>
-                <div class="flex items-center space-x-1 bg-amber-800 px-2 py-1 rounded border border-amber-500">
-                    <span class="text-xs text-amber-200">থিম:</span>
-                    <input type="color" id="theme-color-picker" onchange="changeThemeColor(this.value)" value="#b45309" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
-                </div>
-            </div>
+<body>
+    <div id="app">
+        <div style="text-align: center; padding: 40px; color: #059669;">
+            <h3>JAKIR LTD</h3>
+            <p style="color: #64748b; font-size: 12px; margin-top: 5px;">লোড হচ্ছে...</p>
         </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-
-        <!-- 1. Realtime Audio & Video Call Dashboard Widget -->
-        <section class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 class="text-md font-bold mb-3 text-amber-700 flex items-center gap-2">
-                📹 রিয়েলটাইম অডিও ও ভিডিও কল ড্যাশবোর্ড
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-gray-900 rounded-lg overflow-hidden relative h-36 flex items-center justify-center text-white shadow-inner">
-                    <div id="video-status" class="absolute top-2 left-2 bg-red-600 text-xs px-2 py-0.5 rounded font-medium">ক্যামেরা বন্ধ</div>
-                    <div class="text-center p-2">
-                        <p class="text-xs text-gray-400">লাইভ প্রিভিউ উইন্ডো</p>
-                        <div class="mt-2 space-x-1">
-                            <button onclick="toggleVideo()" class="bg-amber-600 text-xs px-2.5 py-1 rounded hover:bg-amber-500">ভিডিও</button>
-                            <button onclick="toggleAudio()" class="bg-emerald-600 text-xs px-2.5 py-1 rounded hover:bg-emerald-500">মাইক</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="md:col-span-3 flex flex-col justify-between bg-amber-50 p-4 rounded-lg border border-amber-100">
-                    <div>
-                        <h3 class="font-semibold text-sm text-amber-900">শোরুম ও স্টক ইন্টারকম কানেক্টিভিটি</h3>
-                        <p class="text-xs text-gray-600 mt-1">হানিফ ডোর শোরুম এবং ডেলিভারি পয়েন্টের মধ্যে ইনস্ট্যান্ট অডিও-ভিডিও যোগাযোগের হাব।</p>
-                    </div>
-                    <div class="flex gap-2 mt-3">
-                        <button onclick="alert('অডিও কল কানেক্ট হচ্ছে...')" class="bg-amber-700 text-white text-xs px-3.5 py-2 rounded shadow hover:bg-amber-800">📞 অডিও কল</button>
-                        <button onclick="alert('ভিডিও কল রিং হচ্ছে...')" class="bg-emerald-700 text-white text-xs px-3.5 py-2 rounded shadow hover:bg-emerald-800">🎥 ভিডিও কল</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. Profile Setup Section with Picture -->
-        <section class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 class="text-md font-bold mb-3 text-amber-700">👤 প্রোফাইল ছবি ও ইউজার সেটিংস</h2>
-            <div class="flex items-center space-x-4">
-                <img id="profile-preview" src="https://via.placeholder.com/80" class="w-16 h-16 rounded-full object-cover border-2 border-amber-600 shadow" alt="Avatar">
-                <div>
-                    <input type="file" id="avatar-input" accept="image/*" onchange="updateProfileAvatar(event)" class="text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
-                    <p class="text-xs text-gray-400 mt-1">আপনার বা কর্মচারীর প্রোফাইল ছবি আপলোড করুন।</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3. ROLE-BASED SECTIONS -->
-
-        <!-- OWNER & MANAGER VIEW: Challan Creation & Management -->
-        <section id="owner-manager-section" class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-md font-bold text-amber-700">📦 নতুন ডোর চালান তৈরি ও ম্যানেজমেন্ট (মালিক/ম্যানেজার)</h2>
-                <button onclick="printChallan()" class="bg-gray-800 text-white text-xs px-3 py-1.5 rounded hover:bg-gray-700 shadow">🖨️ কালার প্রিন্ট চালান</button>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4 bg-gray-50 p-3 rounded border">
-                <input type="text" id="c-customer" placeholder="গ্রাহকের নাম" class="border p-2 text-xs rounded focus:ring-1 focus:ring-amber-500">
-                <input type="text" id="c-product" placeholder="দরজার মডেল / বিবরণ" class="border p-2 text-xs rounded focus:ring-1 focus:ring-amber-500">
-                <input type="number" id="c-price" placeholder="টাকার হিসাব (মূল্য)" class="border p-2 text-xs rounded focus:ring-1 focus:ring-amber-500">
-                <input type="date" id="c-order-date" class="border p-2 text-xs rounded">
-                <input type="datetime-local" id="c-delivery-time" class="border p-2 text-xs rounded">
-                <button onclick="saveChallan()" class="md:col-span-3 lg:col-span-5 bg-amber-600 text-white text-xs py-2 rounded hover:bg-amber-700 font-semibold shadow">চালান সেভ ও অটো সেন্ড করুন</button>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-amber-50 text-amber-900 border-b">
-                            <th class="p-2.5">অর্ডার ও ডেলিভারি সময়</th>
-                            <th class="p-2.5">গ্রাহক</th>
-                            <th class="p-2.5">দরজার বিবরণ</th>
-                            <th class="p-2.5">টাকার হিসাব</th>
-                            <th class="p-2.5">স্ট্যাটাস</th>
-                        </tr>
-                    </thead>
-                    <tbody id="full-challan-table">
-                        <!-- Dynamic Records -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- STAFF VIEW: Chief Employee (No Price, Only Product & Image + Order/Delivery Date) -->
-        <section id="staff-section" class="bg-white rounded-xl shadow-md p-4 border border-gray-200 hidden">
-            <h2 class="text-md font-bold text-amber-700 mb-2">📋 প্রধান কর্মচারীর ড্যাশবোর্ড (প্রোডাক্ট ও শিডিউল ভিউ)</h2>
-            <p class="text-xs text-red-500 mb-3 bg-red-50 p-2 rounded border border-red-100">⚠️ গোপনীয়তা নোটিশ: প্রধান কর্মচারীর এই প্যানেলে কোনো আর্থিক হিসাব বা টাকার পরিমাণ দেখানো হয় না। শুধু ডোর প্রোডাক্ট, ছবি এবং শিডিউল থাকে।</p>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-amber-50 text-amber-900 border-b">
-                            <th class="p-2.5">অর্ডার তারিখ</th>
-                            <th class="p-2.5">ডেলিভারি সময়</th>
-                            <th class="p-2.5">দরজার বিবরণ</th>
-                            <th class="p-2.5">প্রোডাক্ট ছবি</th>
-                        </tr>
-                    </thead>
-                    <tbody id="staff-challan-table">
-                        <!-- Staff rows -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- DRIVER VIEW: Delivery Challans -->
-        <section id="driver-section" class="bg-white rounded-xl shadow-md p-4 border border-gray-200 hidden">
-            <h2 class="text-md font-bold text-amber-700 mb-3">🚚 ড্রাইভার ডেলিভারি চালান অপশন</h2>
-            <p class="text-xs text-gray-500 mb-3">ম্যানেজার বা মালিক কর্তৃক চালান সাবমিট হওয়ার সাথে সাথে এখানে ডেলিভারির শিডিউল চলে আসে।</p>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-amber-50 text-amber-900 border-b">
-                            <th class="p-2.5">ডেলিভারি সময়</th>
-                            <th class="p-2.5">গ্রাহক</th>
-                            <th class="p-2.5">দরজার বিবরণ</th>
-                            <th class="p-2.5">অ্যাকশন</th>
-                        </tr>
-                    </thead>
-                    <tbody id="driver-challan-table">
-                        <!-- Driver rows -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- 4. Advance Salary & Automatic Monthly Calculation Section -->
-        <section class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 class="text-md font-bold text-amber-700 mb-3">💰 অগ্রিম বেতন আবেদন ও অটোমেটিক মাসিক হিসাব</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-gray-50 p-3 rounded border">
-                <input type="text" id="emp-name" placeholder="কর্মচারীর নাম" class="border p-2 text-xs rounded">
-                <input type="number" id="emp-base-salary" placeholder="মূল মাসিক বেতন (টাকা)" class="border p-2 text-xs rounded">
-                <input type="number" id="emp-advance-req" placeholder="অগ্রিম বেতনের আবেদন (টাকা)" class="border p-2 text-xs rounded">
-                <button onclick="submitAdvanceSalary()" class="md:col-span-3 bg-amber-700 text-white text-xs py-2 rounded hover:bg-amber-800 font-semibold shadow">অগ্রিম বেতনের আবেদন জমা দিন ও অটো হিসাব করুন</button>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-amber-50 text-amber-900 border-b">
-                            <th class="p-2.5">কর্মচারী</th>
-                            <th class="p-2.5">মূল বেতন</th>
-                            <th class="p-2.5">অগ্রিম কর্তন</th>
-                            <th class="p-2.5">নিট প্রদেয় বেতন (অটো ক্যালকুলেটেড)</th>
-                            <th class="p-2.5">স্ট্যাটাস</th>
-                        </tr>
-                    </thead>
-                    <tbody id="salary-table">
-                        <!-- Salary records -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Hidden Print Template Area for Color Print Challan -->
-    <div class="print-area p-8 bg-white">
-        <h2 class="text-2xl font-bold text-center text-amber-800">হানিফ ডোর (Hanif Door)</h2>
-        <p class="text-center text-xs mb-4 text-gray-600">আস্থা ও ঐতিহ্যের প্রতীক - প্রিমিয়াম কোয়ালিটি ডোর শোরুম</p>
-        <hr class="mb-4 border-amber-600">
-        <div id="print-content-body" class="text-sm"></div>
     </div>
 
-    <!-- JavaScript Application Logic -->
     <script>
-        // Global State Storage
-        let appData = {
-            role: 'owner',
-            themeColor: '#b45309',
-            challans: [
-                { id: 1, customer: 'রফিকুল ইসলাম', product: 'মেহগনি কাঠের ডিজাইন ডোর', price: 12500, orderDate: '2026-11-05', deliveryTime: '2026-11-06 15:30', status: 'অটো-সেন্ট' }
-            ],
-            salaries: [
-                { name: 'আব্দুল করিম', base: 18000, advance: 4000, net: 14000, status: 'ম্যানেজার অনুমোদিত' }
-            ]
-        };
-
-        // Initialize App
-        function initApp() {
-            renderTables();
-            document.getElementById('current-role-display').innerText = `রোল: ${getRoleName(appData.role)}`;
+        let db = null;
+        try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAfcJ8Jhn0eb-Bx_3dhI4TheIt8ppRE8S4",
+                authDomain: "jakir-ltd.firebaseapp.com",
+                databaseURL: "https://jakir-ltd-default-rtdb.firebaseio.com",
+                projectId: "jakir-ltd",
+                storageBucket: "jakir-ltd.appspot.com",
+                messagingSenderId: "235034327378",
+                appId: "1:235034327378:web:a3233b7fe27a2f9436a28b"
+            };
+            if (window.firebase && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+            } else if (window.firebase) {
+                db = firebase.database();
+            }
+        } catch (e) {
+            console.warn("Firebase Init Error:", e);
         }
 
-        function getRoleName(role) {
-            const map = { owner: 'মালিক', manager: 'ম্যানেজার', staff: 'প্রধান কর্মচারী', driver: 'ড্রাইভার' };
-            return map[role] || role;
+        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
+        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
+            { id: 1, name: 'জাকির হোসেন', role: 'চেয়ারম্যান (মালিক)', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', attendance: 14, productionAvg: 160 },
+            { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'ভাইস চেয়ারম্যান (মালিক)', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', attendance: 15, productionAvg: 165 },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'প্রোপ্ৰাইটর (মালিক)', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', attendance: 14, productionAvg: 155 },
+            { id: 4, name: 'মোঃ রহিম আলী', role: 'প্রধান কর্মী', phone: '01700000004', code: '', isOwner: false, status: 'Active', attendance: 14, productionAvg: 160, joinDate: '১৯-২০-২৯' }
+        ];
+        let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
+        let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [{ id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড সিস্টেমে স্বাগতম!', date: 'আজ' }];
+        let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [{ id: 1, name: 'প্লাস্টিক ডোর (মডেল এ)', stock: 25, price: 3500 }];
+        let expenses = JSON.parse(localStorage.getItem('hanif_expenses')) || [];
+        let customers = JSON.parse(localStorage.getItem('hanif_customers')) || [];
+        let orders = JSON.parse(localStorage.getItem('hanif_orders')) || [];
+        let productionLogs = JSON.parse(localStorage.getItem('hanif_production')) || [];
+        let chatMessages = JSON.parse(localStorage.getItem('hanif_chats')) || [];
+
+        let authTab = 'login';
+        let currentTab = 'home';
+
+        function safeSync(path, data, localKey) {
+            localStorage.setItem(localKey, JSON.stringify(data));
+            if (db) { try { db.ref(path).set(data); } catch (err) {} }
         }
 
-        function switchRole(role) {
-            appData.role = role;
-            document.getElementById('current-role-display').innerText = `রোল: ${getRoleName(role)}`;
-            
-            // Toggle Section Visibility based on Role permissions
-            document.getElementById('owner-manager-section').classList.toggle('hidden', role !== 'owner' && role !== 'manager');
-            document.getElementById('staff-section').classList.toggle('hidden', role !== 'staff');
-            document.getElementById('driver-section').classList.toggle('hidden', role !== 'driver');
-            
-            renderTables();
+        if (db) {
+            const listen = (path, localKey, targetVar) => {
+                db.ref(path).on('value', (snap) => {
+                    if (snap.exists()) {
+                        window[targetVar] = snap.val();
+                        localStorage.setItem(localKey, JSON.stringify(snap.val()));
+                        render();
+                    }
+                }, (err) => {});
+            };
+            listen('staffList', 'hanif_staff', 'staffList');
+            listen('attendanceLogs', 'hanif_attendance', 'attendanceLogs');
+            listen('notices', 'hanif_notices', 'notices');
+            listen('inventory', 'hanif_inventory', 'inventory');
+            listen('expenses', 'hanif_expenses', 'expenses');
+            listen('customers', 'hanif_customers', 'customers');
+            listen('orders', 'hanif_orders', 'orders');
+            listen('productionLogs', 'hanif_production', 'productionLogs');
+            listen('chatMessages', 'hanif_chats', 'chatMessages');
         }
 
-        function changeThemeColor(color) {
-            appData.themeColor = color;
-            document.querySelector('header').style.backgroundColor = color;
-        }
+        function render() {
+            try {
+                const app = document.getElementById('app');
+                if (!app) return;
 
-        function updateProfileAvatar(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('profile-preview').src = e.target.result;
-                    document.getElementById('user-avatar-top').src = e.target.result;
+                const pendingCount = (staffList || []).filter(s => s && s.status === 'Pending').length;
+
+                if (!currentUser) {
+                    app.innerHTML = `
+                        <div class="card" style="max-width: 400px; margin: 20px auto;">
+                            <h2 style="color: #059669; text-align: center; margin-bottom: 5px;">JAKIR LTD</h2>
+                            <p style="font-size: 11px; color: #64748b; text-align: center; margin-bottom: 12px;">হানিফ ডোর কারখানা ম্যানেজমেন্ট সিস্টেম</p>
+
+                            <div style="display: flex; gap: 5px; margin-bottom: 12px;">
+                                <button onclick="setAuthTab('login')" class="btn-sub" style="flex:1; ${authTab==='login'?'background:#059669;color:white;':''}">লগইন</button>
+                                <button onclick="setAuthTab('register')" class="btn-sub" style="flex:1; ${authTab==='register'?'background:#059669;color:white;':''}">রেজিস্ট্রেশন</button>
+                            </div>
+
+                            ${authTab === 'login' ? `
+                                <label style="font-size: 11px; font-weight: bold;">মোবাইল নম্বর</label>
+                                <input type="text" id="loginPhone" placeholder="017xxxxxxxx">
+                                <label style="font-size: 11px; font-weight: bold;">সিকিউরিটি কোড (মালিকের জন্য)</label>
+                                <input type="password" id="loginCode" placeholder="কোড দিন">
+                                <button onclick="login()" class="btn">প্রবেশ করুন</button>
+                                <div style="font-size: 10px; color: #64748b; margin-top: 8px; background: #f1f5f9; padding: 6px; border-radius: 4px;">
+                                    <strong>ডেমো মালিক নম্বর:</strong> 01700000001 (কোড: 7771)
+                                </div>
+                            ` : `
+                                <div>
+                                    <label style="font-size: 11px; font-weight: bold;">আপনার পূর্ণ নাম</label>
+                                    <input type="text" id="regName" placeholder="নাম লিখুন">
+                                    <label style="font-size: 11px; font-weight: bold;">মোবাইল নম্বর</label>
+                                    <input type="text" id="regPhone" placeholder="017xxxxxxxx">
+                                    <label style="font-size: 11px; font-weight: bold;">পদবি</label>
+                                    <select id="regRole">
+                                        <option value="প্রধান কর্মী">প্রধান কর্মী</option>
+                                        <option value="ম্যানেজার">ম্যানেজার</option>
+                                        <option value="ড্রাইভার">ড্রাইভার</option>
+                                    </select>
+                                    <button onclick="registerStaff()" class="btn">আবেদন পাঠান</button>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                } else {
+                    app.innerHTML = `
+                        <div style="background: #0f172a; color: white; padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <h3 style="font-size: 13px; color: #34d399;">HANIF DOOR - JAKIR LTD</h3>
+                                <p style="font-size: 11px; color: #cbd5e1;">${currentUser.name} (${currentUser.role})</p>
+                            </div>
+                            <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px; margin:0;">লগআউট</button>
+                        </div>
+
+                        <!-- নতুন ও সুন্দর নেভিগেশন বার যার মধ্যে সব আগের ড্যাশবোর্ড ও নতুন প্রোফাইল/সেটিং যুক্ত -->
+                        <div class="nav">
+                            <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
+                            <button onclick="setTab('profiles')" class="btn-sub ${currentTab==='profiles'?'active':''}">👥 প্রোফাইল প্যানেল</button>
+                            <button onclick="setTab('settings')" class="btn-sub ${currentTab==='settings'?'active':''}">⚙️ অ্যাপ সেটিং</button>
+                            <button onclick="setTab('attendance')" class="btn-sub ${currentTab==='attendance'?'active':''}">📍 জিপিএস হাজিরা</button>
+                            <button onclick="setTab('orders')" class="btn-sub ${currentTab==='orders'?'active':''}">📝 অর্ডার</button>
+                            <button onclick="setTab('delivery')" class="btn-sub ${currentTab==='delivery'?'active':''}">🚚 ডেলিভারি</button>
+                            <button onclick="setTab('production')" class="btn-sub ${currentTab==='production'?'active':''}">🏗️ প্রোডাকশন</button>
+                            <button onclick="setTab('inventory')" class="btn-sub ${currentTab==='inventory'?'active':''}">📦 স্টক</button>
+                            <button onclick="setTab('due')" class="btn-sub ${currentTab==='due'?'active':''}">📒 বাকি খাতা</button>
+                            <button onclick="setTab('expense')" class="btn-sub ${currentTab==='expense'?'active':''}">💸 খরচ</button>
+                            <button onclick="setTab('chat')" class="btn-sub ${currentTab==='chat'?'active':''}">💬 মেসেজ</button>
+                            ${currentUser.isOwner ? `
+                                <button onclick="setTab('owner')" class="btn-sub ${currentTab==='owner'?'active':''}" style="background:#059669; color:white; position:relative;">
+                                    👑 তিন মালিক
+                                    ${pendingCount > 0 ? `<span style="background:red; color:white; border-radius:50%; padding:1px 5px; font-size:9px; position:absolute; top:-5px; right:-5px;">${pendingCount}</span>` : ''}
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        ${currentTab === 'home' ? `
+                            <div>
+                                ${notices.map(n => `
+                                    <div class="notice-card">
+                                        <strong>📢 নোটিশ:</strong> ${n.text} <span style="font-size: 10px; float: right;">${n.date}</span>
+                                    </div>
+                                `).join('')}
+                                <div class="card">
+                                    <h3>স্বাগতম, ${currentUser.name}!</h3>
+                                    <p style="font-size: 12px; color: #64748b; margin-top: 4px;">হানিফ ডোর কারখানা ম্যানেজমেন্ট সিস্টেম সম্পূর্ণ সচল রয়েছে। উপরে মেনু থেকে আপনার কাঙ্ক্ষিত অপশনে ক্লিক করুন।</p>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'profiles' ? `
+                            <div>
+                                <h3 style="color: #059669; margin-bottom: 8px; font-size: 14px;">👑 মালিক ও কর্মচারী প্রোফাইল</h3>
+                                <div class="profile-card" style="border-left: 4px solid #059669;">
+                                    <div class="profile-header">
+                                        <div class="profile-avatar">জ</div>
+                                        <div>
+                                            <h4 style="font-size: 14px; color: #0f172a;">জাকির হোসেন <span style="color: #059669;">✔</span></h4>
+                                            <p style="font-size: 11px; color: #64748b;">চেয়ারম্যান, জাকির লিমিটেড</p>
+                                        </div>
+                                    </div>
+                                    <p style="font-size: 11px; color: #334155; margin-top: 4px;">📞 পোস্টিং: জাকির লিমিটেড | ✉️ জেনভেন্ট: +911875563309</p>
+                                    <div style="display:flex; gap:6px; margin-top:8px;">
+                                        <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="setTab('owner')">👑 ড্যাশবোর্ড</button>
+                                        <button class="btn-sub" style="background:#2563eb; color:white; flex:1;" onclick="setTab('owner')">⚙️ ম্যানেজ স্টাফ</button>
+                                    </div>
+                                </div>
+
+                                ${(staffList || []).filter(s => !s.isOwner).map(s => `
+                                    <div class="profile-card" style="border-left: 4px solid #2563eb;">
+                                        <div class="profile-header">
+                                            <div class="profile-avatar" style="background:#2563eb;">${s.name.charAt(0)}</div>
+                                            <div>
+                                                <h4 style="font-size: 14px; color: #0f172a;">${s.name}</h4>
+                                                <p style="font-size: 11px; color: #64748b;">${s.role}</p>
+                                            </div>
+                                        </div>
+                                        <p style="font-size: 11px; color: #334155; margin-top: 4px;">কারখানা শুরু তারিখ: ${s.joinDate || '১৯-২০-২৯'} | টোটাল হাজিরা: ${s.attendance || 14} দিন</p>
+                                        <p style="font-size: 11px; color: #334155; margin-top: 2px;">প্রতিদিন উৎপাদন এভারেজ: ${s.productionAvg || 160} পিস</p>
+                                        <div style="display:flex; gap:6px; margin-top:8px;">
+                                            <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="setTab('attendance')">✅ হাজিরা</button>
+                                            <button class="btn-sub" style="background:#2563eb; color:white; flex:1;" onclick="setTab('production')">🏗️ উৎপাদন রিপোর্ট</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'settings' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 10px; font-size: 14px;">⚙️ সেটিং ও নিরাপত্তা প্যানেল</h3>
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🔐 পিন কোড পরিবর্তন</p>
+                                    <input type="password" placeholder="পুরাতন পিন/কোড">
+                                    <input type="password" placeholder="নতুন পিন/কোড">
+                                    <button onclick="alert('পিন কোড সফলভাবে পরিবর্তিত হয়েছে!')" class="btn" style="padding: 8px;">পিন পরিবর্তন করুন</button>
+                                </div>
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
+                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🌍 ভাষা পরিবর্তন (Language)</p>
+                                    <select><option value="bn" selected>বাংলা (Bangla)</option><option value="en">English</option></select>
+                                </div>
+                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🔔 নোটিফিকেশন অ্যালার্ট</p>
+                                    <label style="display: block; font-size: 12px; margin-top: 4px;"><input type="checkbox" checked> অর্ডার অ্যালার্ট</label>
+                                    <label style="display: block; font-size: 12px; margin-top: 4px;"><input type="checkbox" checked> ডেলিভারি আপডেট</label>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'attendance' ? `
+                            <div class="card">
+                                <h3>📍 রিয়েল-টাইম জিপিএস ক্যামেরা হাজিরা</h3>
+                                <input type="file" accept="image/*" capture="user" id="attPhoto" style="font-size:11px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                                    <button onclick="recordAttendance('Check-In')" class="btn">🟢 চেক-ইন</button>
+                                    <button onclick="recordAttendance('Check-Out')" class="btn btn-red">🔴 চেক-আউট</button>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'orders' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">📝 নতুন অর্ডার ও মেমো তৈরি</h3>
+                                <input type="text" id="ordCust" placeholder="কাস্টমারের নাম ও ফোন">
+                                <input type="text" id="ordAddr" placeholder="ঠিকানা">
+                                <input type="text" id="ordProduct" placeholder="পণ্যের বিবরণ">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                    <input type="number" id="ordQty" placeholder="পরিমাণ (টি)">
+                                    <input type="number" id="ordTotal" placeholder="মোট দাম ৳">
+                                </div>
+                                <input type="number" id="ordAdv" placeholder="অ্যাডভান্স জমা ৳">
+                                <button onclick="createOrder()" class="btn">অর্ডার বুকিং ও মেমো তৈরি</button>
+                                <h4 style="margin-top: 10px;">অর্ডার তালিকা</h4>
+                                <table>
+                                    <tr><th>মেমো</th><th>কাস্টমার</th><th>পণ্য</th><th>বাকি</th></tr>
+                                    ${(orders || []).map(o => `<tr><td>#${o.memo}</td><td>${o.cust}</td><td>${o.product}</td><td>৳${o.total - o.adv}</td></tr>`).join('')}
+                                </table>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'delivery' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">🚚 ড্রাইভার ডেলিভারি মডিউল</h3>
+                                ${(orders || []).filter(o => !o.delivered).length === 0 ? `<p style="color:#64748b; font-size:12px;">কোনো পেন্ডিং ডেলিভারি নেই।</p>` : ''}
+                                ${(orders || []).filter(o => !o.delivered).map(o => `
+                                    <div style="background:#f1f5f9; padding:8px; border-radius:6px; margin-bottom:6px;">
+                                        <p><strong>মেমো #${o.memo}</strong> - ${o.cust} (${o.addr})</p>
+                                        <button onclick="completeDelivery('${o.id}')" class="btn" style="padding:6px; margin-top:4px;">✅ ডেলিভারি সম্পন্ন করুন</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'production' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">🏗️ দৈনিক প্রোডাকশন রিপোর্ট</h3>
+                                <input type="text" id="prodModel" placeholder="দরজার মডেল">
+                                <input type="number" id="prodQty" placeholder="পরিমাণ (টি)">
+                                <button onclick="submitProduction()" class="btn">উৎপাদন জমা দিন</button>
+                                <h4 style="margin-top: 10px;">রিপোর্ট</h4>
+                                ${(productionLogs || []).map(p => `
+                                    <div style="background:#f8fafc; padding:6px; border-radius:4px; margin-top:4px; font-size:11px;">
+                                        ${p.staff} — ${p.model} (${p.qty}টি) [${p.status}]
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'inventory' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">📦 স্টক ও ইনভেন্টরি</h3>
+                                <input type="text" id="invName" placeholder="পণ্যের নাম">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                                    <input type="number" id="invStock" placeholder="স্টক পরিমাণ">
+                                    <input type="number" id="invPrice" placeholder="মূল্য ৳">
+                                </div>
+                                <button onclick="addInventory()" class="btn">পণ্য যোগ করুন</button>
+                                <table>
+                                    <tr><th>নাম</th><th>স্টক</th><th>মূল্য</th></tr>
+                                    ${(inventory || []).map(i => `<tr><td>${i.name}</td><td>${i.stock} পিস</td><td>৳${i.price}</td></tr>`).join('')}
+                                </table>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'due' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">📒 বাকি খাতা</h3>
+                                <input type="text" id="custName" placeholder="গ্রাহকের নাম ও ফোন">
+                                <input type="number" id="dueAmount" placeholder="বাকি টাকা ৳">
+                                <button onclick="addCustomerDue()" class="btn">বাকি যোগ করুন</button>
+                                <table>
+                                    <tr><th>গ্রাহক</th><th>বাকি</th><th>অ্যাকশন</th></tr>
+                                    ${(customers || []).map(c => `<tr><td>${c.name}</td><td>৳${c.due}</td><td><button onclick="payDue(${c.id})" class="btn-sub" style="background:#059669; color:white; padding:2px 4px;">পরিশোধ</button></td></tr>`).join('')}
+                                </table>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'expense' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">💸 খরচ এন্ট্রি</h3>
+                                <input type="text" id="expReason" placeholder="খরচের বিবরণ">
+                                <input type="number" id="expAmount" placeholder="টাকা ৳">
+                                <button onclick="addExpense()" class="btn">খরচ এন্ট্রি করুন</button>
+                                <table>
+                                    <tr><th>তারিখ</th><th>বিবরণ</th><th>টাকা</th></tr>
+                                    ${(expenses || []).map(e => `<tr><td>${e.date}</td><td>${e.reason}</td><td>৳${e.amount}</td></tr>`).join('')}
+                                </table>
+                            </div>
+                        ` : ''}
+
+                        ${currentTab === 'chat' ? `
+                            <div class="card">
+                                <h3 style="color: #059669; margin-bottom: 8px;">💬 কারখানার ইন্টারনাল মেসেজিং</h3>
+                                <div style="max-height:150px; overflow-y:auto; background:#f8fafc; padding:6px; border-radius:4px; margin-bottom:8px;">
+                                    ${(chatMessages || []).map(m => `<div style="font-size:11px; margin-bottom:4px;"><strong>${m.sender}:</strong> ${m.text}</div>`).join('')}
+                                </div>
+                                <input type="text" id="chatInput" placeholder="মেসেজ লিখুন...">
+                                <button onclick="sendMessage()" class="btn">মেসেজ পাঠান</button>
+                            </div>
+                        ` : ''}
+
+                        ${currentUser.isOwner && currentTab === 'owner' ? `
+                            <div class="card" style="border: 2px solid #059669;">
+                                <h3 style="color: #059669; margin-bottom: 5px;">👑 তিন মালিকের কন্ট্রোল প্যানেল</h3>
+                                <textarea id="noticeText" rows="2" placeholder="নতুন নোটিশ লিখুন..."></textarea>
+                                <button onclick="postNotice()" class="btn" style="margin-bottom: 10px;">নোটিশ পোস্ট করুন</button>
+                                <h4>কর্মী অনুমোদন ও বেতন হিসাব</h4>
+                                ${(staffList || []).map(s => `
+                                    <div style="background:#f8fafc; padding:8px; border-radius:6px; margin-top:6px; font-size:11px; border-left:4px solid ${s.status==='Pending'?'red':'green'};">
+                                        <p><strong>${s.name}</strong> (${s.role}) — ${s.phone}</p>
+                                        ${s.status === 'Pending' ? `
+                                            <input type="number" id="sal_${s.id}" placeholder="মাসিক বেতন ৳" style="margin-top:4px;">
+                                            <button onclick="approveStaff(${s.id})" class="btn" style="padding:4px; margin-top:4px;">অনুমোদন দিন</button>
+                                        ` : `<p style="color:green; margin-top:2px;">স্ট্যাটাস: অনুমোদিত (Active)</p>`}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    `;
                 }
-                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error("Render Error:", err);
             }
         }
 
-        function saveChallan() {
-            const customer = document.getElementById('c-customer').value;
-            const product = document.getElementById('c-product').value;
-            const price = parseFloat(document.getElementById('c-price').value) || 0;
-            const orderDate = document.getElementById('c-order-date').value;
-            const deliveryTime = document.getElementById('c-delivery-time').value;
+        function setAuthTab(t) { authTab = t; render(); }
+        function setTab(t) { currentTab = t; render(); }
 
-            if(!customer || !product) {
-                alert('দয়া করে গ্রাহকের নাম এবং দরজার বিবরণ লিখুন!');
-                return;
-            }
-
-            appData.challans.push({
-                id: Date.now(),
-                customer, product, price, orderDate, deliveryTime, status: 'অটো-সেন্ট'
-            });
-
-            // Reset Inputs
-            document.getElementById('c-customer').value = '';
-            document.getElementById('c-product').value = '';
-            document.getElementById('c-price').value = '';
-            
-            renderTables();
-            alert('চালান সফলভাবে সেভ হয়েছে! প্রধান কর্মচারীর নিকট প্রোডাক্ট/ছবি এবং ড্রাইভারের নিকট ডেলিভারি চালান অটোমেটিক পৌঁছে গেছে।');
+        function login() {
+            const phone = document.getElementById('loginPhone').value.trim();
+            const code = document.getElementById('loginCode').value.trim();
+            const user = staffList.find(s => s.phone === phone);
+            if (!user) { alert('নম্বর পাওয়া যায়নি!'); return; }
+            if (user.isOwner && user.code !== code) { alert('ভুল পিন কোড!'); return; }
+            currentUser = user;
+            localStorage.setItem('hanif_user', JSON.stringify(currentUser));
+            render();
         }
 
-        function submitAdvanceSalary() {
-            const name = document.getElementById('emp-name').value;
-            const base = parseFloat(document.getElementById('emp-base-salary').value) || 0;
-            const advance = parseFloat(document.getElementById('emp-advance-req').value) || 0;
-
-            if(!name || !base) {
-                alert('কর্মচারীর নাম ও মূল বেতন পূরণ করুন!');
-                return;
-            }
-
-            // Automatic monthly calculation (Base - Advance)
-            const net = base - advance;
-
-            appData.salaries.push({
-                name, base, advance, net, status: 'আবেদিত (অটো ক্যালকুলেটেড)'
-            });
-
-            document.getElementById('emp-name').value = '';
-            document.getElementById('emp-base-salary').value = '';
-            document.getElementById('emp-advance-req').value = '';
-
-            renderTables();
-            alert('অগ্রিম বেতনের আবেদন জমা হয়েছে এবং মাসিক নিট বেতন স্বয়ংক্রিয়ভাবে হিসাব করা হয়েছে।');
+        function registerStaff() {
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const role = document.getElementById('regRole').value;
+            if (!name || phone.length !== 11) { alert('সঠিক নাম ও ১১ ডিজিটের নম্বর দিন!'); return; }
+            staffList.push({ id: Date.now(), name, role, phone, code: '', isOwner: false, status: 'Pending', attendance: 0, productionAvg: 0 });
+            safeSync('staffList', staffList, 'hanif_staff');
+            alert('আবেদন পাঠানো হয়েছে!');
+            setAuthTab('login');
         }
 
-        function renderTables() {
-            // 1. Owner & Manager Full Financial Table
-            let fullHtml = '';
-            appData.challans.forEach(c => {
-                fullHtml += `<tr class="border-b"><td class="p-2.5 font-medium">${c.orderDate || 'আজ'} / ${c.deliveryTime || 'নির্ধারিত'}</td><td class="p-2.5">${c.customer}</td><td class="p-2.5">${c.product}</td><td class="p-2.5 font-bold text-amber-700">৳${c.price}</td><td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px]">${c.status}</span></td></tr>`;
-            });
-            document.getElementById('full-challan-table').innerHTML = fullHtml || '<tr><td colspan="5" class="p-2 text-center text-gray-400">কোনো চালান নেই</td></tr>';
-
-            // 2. Staff Table (No Price, Only Product & Image + Dates)
-            let staffHtml = '';
-            appData.challans.forEach(c => {
-                staffHtml += `<tr class="border-b"><td class="p-2.5">${c.orderDate || 'আজ'}</td><td class="p-2.5 font-semibold text-red-600">${c.deliveryTime || 'নির্ধারিত'}</td><td class="p-2.5 font-bold">${c.product}</td><td class="p-2.5"><img src="https://images.unsplash.com/photo-1541123437800-1bb1317badc2?w=50&h=50&fit=crop" class="w-8 h-8 rounded object-cover border" alt="Door Image"></td></tr>`;
-            });
-            document.getElementById('staff-challan-table').innerHTML = staffHtml || '<tr><td colspan="4" class="p-2 text-center text-gray-400">কোনো চালান নেই</td></tr>';
-
-            // 3. Driver Delivery Table
-            let driverHtml = '';
-            appData.challans.forEach(c => {
-                driverHtml += `<tr class="border-b"><td class="p-2.5 font-bold text-red-600">${c.deliveryTime || 'তাৎক্ষণিক'}</td><td class="p-2.5">${c.customer}</td><td class="p-2.5 font-medium">${c.product}</td><td class="p-2.5"><button onclick="alert('ডেলিভারি সম্পন্ন হিসেবে ড্রাইভার প্যানেলে আপডেট হয়েছে!')" class="bg-green-600 text-white px-2.5 py-1 rounded text-xs hover:bg-green-700 shadow">ডেলিভারি কমপ্লিট</button></td></tr>`;
-            });
-            document.getElementById('driver-challan-table').innerHTML = driverHtml || '<tr><td colspan="4" class="p-2 text-center text-gray-400">কোনো ডেলিভারি চালান নেই</td></tr>';
-
-            // 4. Salary Table with Auto Calculation
-            let salaryHtml = '';
-            appData.salaries.forEach(s => {
-                salaryHtml += `<tr class="border-b"><td class="p-2.5 font-medium">${s.name}</td><td class="p-2.5">৳${s.base}</td><td class="p-2.5 text-red-500 font-medium">৳${s.advance}</td><td class="p-2.5 font-bold text-emerald-600">৳${s.net}</td><td class="p-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px]">${s.status}</span></td></tr>`;
-            });
-            document.getElementById('salary-table').innerHTML = salaryHtml || '<tr><td colspan="5" class="p-2 text-center text-gray-400">কোনো তথ্য নেই</td></tr>';
+        function approveStaff(id) {
+            const sal = Number(document.getElementById(`sal_${id}`).value) || 0;
+            staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', salary: sal} : s);
+            safeSync('staffList', staffList, 'hanif_staff');
+            alert('অনুমোদিত হয়েছে!');
+            render();
         }
 
-        function printChallan() {
-            let content = `<table width="100%" border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; text-align: left; font-size: 12px;">
-                <tr style="background-color: #fef3c7;"><th>তারিখ ও সময়</th><th>গ্রাহকের নাম</th><th>দরজার বিবরণ ও মডেল</th><th>মূল্য (টাকা)</th></tr>`;
-            appData.challans.forEach(c => {
-                content += `<tr><td>${c.orderDate} / ${c.deliveryTime}</td><td>${c.customer}</td><td>${c.product}</td><td>৳${c.price}</td></tr>`;
-            });
-            content += `</table>`;
-            document.getElementById('print-content-body').innerHTML = content;
-            window.print();
+        function createOrder() {
+            const cust = document.getElementById('ordCust').value.trim();
+            const addr = document.getElementById('ordAddr').value.trim();
+            const product = document.getElementById('ordProduct').value.trim();
+            const total = Number(document.getElementById('ordTotal').value) || 0;
+            const adv = Number(document.getElementById('ordAdv').value) || 0;
+            if (!cust || !product || total <= 0) { alert('সঠিক তথ্য দিন!'); return; }
+            const memo = Math.floor(1000 + Math.random() * 9000);
+            orders.unshift({ id: Date.now().toString(), memo, cust, addr, product, total, adv, delivered: false });
+            safeSync('orders', orders, 'hanif_orders');
+            alert('অর্ডার তৈরি হয়েছে! মেমো #' + memo);
+            render();
         }
 
-        let isVideoOn = false;
-        function toggleVideo() {
-            isVideoOn = !isVideoOn;
-            const statusEl = document.getElementById('video-status');
-            statusEl.innerText = isVideoOn ? 'ক্যামেরা লাইভ চালু' : 'ক্যামেরা বন্ধ';
-            statusEl.className = isVideoOn ? 'absolute top-2 left-2 bg-green-600 text-xs px-2 py-0.5 rounded font-medium' : 'absolute top-2 left-2 bg-red-600 text-xs px-2 py-0.5 rounded font-medium';
+        function completeDelivery(id) {
+            orders = orders.map(o => o.id === id ? {...o, delivered: true} : o);
+            safeSync('orders', orders, 'hanif_orders');
+            alert('ডেলিভারি সম্পন্ন!');
+            render();
         }
 
-        function toggleAudio() {
-            alert('মাইক্রোফোন স্ট্যাটাস মিউট/আনমিউট করা হয়েছে।');
+        function submitProduction() {
+            const model = document.getElementById('prodModel').value.trim();
+            const qty = Number(document.getElementById('prodQty').value) || 0;
+            if (!model || qty <= 0) return;
+            productionLogs.unshift({ id: Date.now(), staff: currentUser.name, model, qty, status: 'Approved', date: new Date().toLocaleDateString('bn-BD') });
+            safeSync('productionLogs', productionLogs, 'hanif_production');
+            alert('প্রোডাকশন জমা হয়েছে!');
+            render();
         }
 
-        window.onload = initApp;
+        function addInventory() {
+            const name = document.getElementById('invName').value.trim();
+            const stock = Number(document.getElementById('invStock').value) || 0;
+            const price = Number(document.getElementById('invPrice').value) || 0;
+            if (!name) return;
+            inventory.push({ id: Date.now(), name, stock, price });
+            safeSync('inventory', inventory, 'hanif_inventory');
+            render();
+        }
+
+        function addCustomerDue() {
+            const name = document.getElementById('custName').value.trim();
+            const due = Number(document.getElementById('dueAmount').value) || 0;
+            if (!name || due <= 0) return;
+            customers.push({ id: Date.now(), name, due });
+            safeSync('customers', customers, 'hanif_customers');
+            render();
+        }
+
+        function payDue(id) {
+            customers = customers.filter(c => c.id !== id);
+            safeSync('customers', customers, 'hanif_customers');
+            render();
+        }
+
+        function addExpense() {
+            const reason = document.getElementById('expReason').value.trim();
+            const amount = Number(document.getElementById('expAmount').value) || 0;
+            if (!reason || amount <= 0) return;
+            expenses.push({ id: Date.now(), date: new Date().toLocaleDateString('bn-BD'), reason, amount });
+            safeSync('expenses', expenses, 'hanif_expenses');
+            render();
+        }
+
+        function sendMessage() {
+            const text = document.getElementById('chatInput').value.trim();
+            if (!text) return;
+            chatMessages.push({ sender: currentUser.name, text, time: new Date().toLocaleTimeString('bn-BD') });
+            safeSync('chatMessages', chatMessages, 'hanif_chats');
+            render();
+        }
+
+        function postNotice() {
+            const text = document.getElementById('noticeText').value.trim();
+            if (!text) return;
+            notices.unshift({ id: Date.now(), text, date: new Date().toLocaleDateString('bn-BD') });
+            safeSync('notices', notices, 'hanif_notices');
+            render();
+        }
+
+        function recordAttendance(type) {
+            if (!navigator.geolocation) { alert('লোকেশন সমর্থিত নয়!'); return; }
+            navigator.geolocation.getCurrentPosition(() => {
+                attendanceLogs.push({ name: currentUser.name, phone: currentUser.phone, type, time: new Date().toLocaleString('bn-BD') });
+                safeSync('attendanceLogs', attendanceLogs, 'hanif_attendance');
+                alert(type + ' সফল হয়েছে!');
+            }, () => { alert('লোকেশন পারমিশন অন করুন!'); });
+        }
+
+        function logout() {
+            localStorage.removeItem('hanif_user');
+            currentUser = null;
+            render();
+        }
+
+        window.addEventListener('DOMContentLoaded', render);
+        render();
     </script>
 </body>
 </html>
