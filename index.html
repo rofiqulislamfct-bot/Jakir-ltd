@@ -58,13 +58,19 @@
             console.warn("Firebase Init Error:", e);
         }
 
-        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
-        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
+        // স্থায়ী তিন মালিকের ডিফল্ট প্রোফাইল
+        const defaultOwners = [
             { id: 1, name: 'জাকির হোসেন', role: 'চেয়ারম্যান (মালিক)', phone: '01700000001', code: '7771', isOwner: true, status: 'Active', attendance: 14, productionAvg: 160 },
             { id: 2, name: 'রফিকুল ইসলাম হৃদয়', role: 'ভাইস চেয়ারম্যান (মালিক)', phone: '01700000002', code: '7772', isOwner: true, status: 'Active', attendance: 15, productionAvg: 165 },
-            { id: 3, name: 'আবু সাকের জীবন', role: 'প্রোপ্ৰাইটর (মালিক)', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', attendance: 14, productionAvg: 155 },
+            { id: 3, name: 'আবু সাকের জীবন', role: 'প্রোপ্ৰাইটর (মালিক)', phone: '01700000003', code: '7773', isOwner: true, status: 'Active', attendance: 14, productionAvg: 155 }
+        ];
+
+        let currentUser = JSON.parse(localStorage.getItem('hanif_user')) || null;
+        let staffList = JSON.parse(localStorage.getItem('hanif_staff')) || [
+            ...defaultOwners,
             { id: 4, name: 'মোঃ রহিম আলী', role: 'প্রধান কর্মী', phone: '01700000004', code: '', isOwner: false, status: 'Active', attendance: 14, productionAvg: 160, joinDate: '১৯-২০-২৯' }
         ];
+
         let attendanceLogs = JSON.parse(localStorage.getItem('hanif_attendance')) || [];
         let notices = JSON.parse(localStorage.getItem('hanif_notices')) || [{ id: 1, text: 'হানিফ ডোর - জাকির লিমিটেড সিস্টেমে স্বাগতম!', date: 'আজ' }];
         let inventory = JSON.parse(localStorage.getItem('hanif_inventory')) || [{ id: 1, name: 'প্লাস্টিক ডোর (মডেল এ)', stock: 25, price: 3500 }];
@@ -77,6 +83,25 @@
         let authTab = 'login';
         let currentTab = 'home';
 
+        // মালিকদের অ্যাকাউন্ট যাতে কোনোভাবে লোকাল বা ফায়ারবেস ডেটা থেকে মুছে না যায়
+        function ensureOwnersExist(list) {
+            if (!Array.isArray(list)) list = [];
+            defaultOwners.forEach(owner => {
+                const index = list.findIndex(s => s && s.phone === owner.phone);
+                if (index === -1) {
+                    list.push(owner);
+                } else {
+                    // পিন কোড এবং মালিকের অধিকার অক্ষুণ্ণ রাখা
+                    list[index].code = owner.code;
+                    list[index].isOwner = true;
+                    list[index].role = owner.role;
+                }
+            });
+            return list;
+        }
+
+        staffList = ensureOwnersExist(staffList);
+
         function safeSync(path, data, localKey) {
             localStorage.setItem(localKey, JSON.stringify(data));
             if (db) { try { db.ref(path).set(data); } catch (err) {} }
@@ -86,8 +111,12 @@
             const listen = (path, localKey, targetVar) => {
                 db.ref(path).on('value', (snap) => {
                     if (snap.exists()) {
-                        window[targetVar] = snap.val();
-                        localStorage.setItem(localKey, JSON.stringify(snap.val()));
+                        let data = snap.val();
+                        if (targetVar === 'staffList') {
+                            data = ensureOwnersExist(data);
+                        }
+                        window[targetVar] = data;
+                        localStorage.setItem(localKey, JSON.stringify(data));
                         render();
                     }
                 }, (err) => {});
@@ -128,7 +157,10 @@
                                 <input type="password" id="loginCode" placeholder="কোড দিন">
                                 <button onclick="login()" class="btn">প্রবেশ করুন</button>
                                 <div style="font-size: 10px; color: #64748b; margin-top: 8px; background: #f1f5f9; padding: 6px; border-radius: 4px;">
-                                    <strong>ডেমো মালিক নম্বর:</strong> 01700000001 (কোড: 7771)
+                                    <strong>তিন মালিকের লগইন পিন:</strong><br>
+                                    ১. জাকির হোসেন: 01700000001 (কোড: 7771)<br>
+                                    ২. রফিকুল ইসলাম হৃদয়: 01700000002 (কোড: 7772)<br>
+                                    ৩. আবু সাকের জীবন: 01700000003 (কোড: 7773)
                                 </div>
                             ` : `
                                 <div>
@@ -157,7 +189,6 @@
                             <button onclick="logout()" class="btn btn-red" style="width: auto; padding: 5px 10px; font-size: 11px; margin:0;">লগআউট</button>
                         </div>
 
-                        <!-- নতুন ও সুন্দর নেভিগেশন বার যার মধ্যে সব আগের ড্যাশবোর্ড ও নতুন প্রোফাইল/সেটিং যুক্ত -->
                         <div class="nav">
                             <button onclick="setTab('home')" class="btn-sub ${currentTab==='home'?'active':''}">হোম</button>
                             <button onclick="setTab('profiles')" class="btn-sub ${currentTab==='profiles'?'active':''}">👥 প্রোফাইল প্যানেল</button>
@@ -195,20 +226,21 @@
                         ${currentTab === 'profiles' ? `
                             <div>
                                 <h3 style="color: #059669; margin-bottom: 8px; font-size: 14px;">👑 মালিক ও কর্মচারী প্রোফাইল</h3>
-                                <div class="profile-card" style="border-left: 4px solid #059669;">
-                                    <div class="profile-header">
-                                        <div class="profile-avatar">জ</div>
-                                        <div>
-                                            <h4 style="font-size: 14px; color: #0f172a;">জাকির হোসেন <span style="color: #059669;">✔</span></h4>
-                                            <p style="font-size: 11px; color: #64748b;">চেয়ারম্যান, জাকির লিমিটেড</p>
+                                ${(staffList || []).filter(s => s.isOwner).map(s => `
+                                    <div class="profile-card" style="border-left: 4px solid #059669;">
+                                        <div class="profile-header">
+                                            <div class="profile-avatar">${s.name.charAt(0)}</div>
+                                            <div>
+                                                <h4 style="font-size: 14px; color: #0f172a;">${s.name} <span style="color: #059669;">✔</span></h4>
+                                                <p style="font-size: 11px; color: #64748b;">${s.role}</p>
+                                            </div>
+                                        </div>
+                                        <p style="font-size: 11px; color: #334155; margin-top: 4px;">📞 ফোন: ${s.phone}</p>
+                                        <div style="display:flex; gap:6px; margin-top:8px;">
+                                            <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="setTab('owner')">👑 ড্যাশবোর্ড</button>
                                         </div>
                                     </div>
-                                    <p style="font-size: 11px; color: #334155; margin-top: 4px;">📞 পোস্টিং: জাকির লিমিটেড | ✉️ জেনভেন্ট: +911875563309</p>
-                                    <div style="display:flex; gap:6px; margin-top:8px;">
-                                        <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="setTab('owner')">👑 ড্যাশবোর্ড</button>
-                                        <button class="btn-sub" style="background:#2563eb; color:white; flex:1;" onclick="setTab('owner')">⚙️ ম্যানেজ স্টাফ</button>
-                                    </div>
-                                </div>
+                                `).join('')}
 
                                 ${(staffList || []).filter(s => !s.isOwner).map(s => `
                                     <div class="profile-card" style="border-left: 4px solid #2563eb;">
@@ -219,8 +251,7 @@
                                                 <p style="font-size: 11px; color: #64748b;">${s.role}</p>
                                             </div>
                                         </div>
-                                        <p style="font-size: 11px; color: #334155; margin-top: 4px;">কারখানা শুরু তারিখ: ${s.joinDate || '১৯-২০-২৯'} | টোটাল হাজিরা: ${s.attendance || 14} দিন</p>
-                                        <p style="font-size: 11px; color: #334155; margin-top: 2px;">প্রতিদিন উৎপাদন এভারেজ: ${s.productionAvg || 160} পিস</p>
+                                        <p style="font-size: 11px; color: #334155; margin-top: 4px;">ফোন: ${s.phone} | টোটাল হাজিরা: ${s.attendance || 0} দিন</p>
                                         <div style="display:flex; gap:6px; margin-top:8px;">
                                             <button class="btn-sub" style="background:#059669; color:white; flex:1;" onclick="setTab('attendance')">✅ হাজিরা</button>
                                             <button class="btn-sub" style="background:#2563eb; color:white; flex:1;" onclick="setTab('production')">🏗️ উৎপাদন রিপোর্ট</button>
@@ -238,15 +269,6 @@
                                     <input type="password" placeholder="পুরাতন পিন/কোড">
                                     <input type="password" placeholder="নতুন পিন/কোড">
                                     <button onclick="alert('পিন কোড সফলভাবে পরিবর্তিত হয়েছে!')" class="btn" style="padding: 8px;">পিন পরিবর্তন করুন</button>
-                                </div>
-                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e2e8f0;">
-                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🌍 ভাষা পরিবর্তন (Language)</p>
-                                    <select><option value="bn" selected>বাংলা (Bangla)</option><option value="en">English</option></select>
-                                </div>
-                                <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                    <p style="font-weight: bold; font-size: 12px; margin-bottom: 4px;">🔔 নোটিফিকেশন অ্যালার্ট</p>
-                                    <label style="display: block; font-size: 12px; margin-top: 4px;"><input type="checkbox" checked> অর্ডার অ্যালার্ট</label>
-                                    <label style="display: block; font-size: 12px; margin-top: 4px;"><input type="checkbox" checked> ডেলিভারি আপডেট</label>
                                 </div>
                             </div>
                         ` : ''}
@@ -390,12 +412,37 @@
         function setAuthTab(t) { authTab = t; render(); }
         function setTab(t) { currentTab = t; render(); }
 
+        // আপডেটেড নিখুঁত লগইন ফাংশন
         function login() {
-            const phone = document.getElementById('loginPhone').value.trim();
-            const code = document.getElementById('loginCode').value.trim();
-            const user = staffList.find(s => s.phone === phone);
-            if (!user) { alert('নম্বর পাওয়া যায়নি!'); return; }
-            if (user.isOwner && user.code !== code) { alert('ভুল পিন কোড!'); return; }
+            const phoneEl = document.getElementById('loginPhone');
+            const codeEl = document.getElementById('loginCode');
+            
+            const phone = phoneEl ? phoneEl.value.trim() : '';
+            const code = codeEl ? codeEl.value.trim() : '';
+
+            if (!phone) {
+                alert('অনুগ্রহ করে মোবাইল নম্বর দিন!');
+                return;
+            }
+
+            const user = (staffList || []).find(s => s && s.phone === phone);
+
+            if (!user) {
+                alert('এই মোবাইল নম্বরে কোনো ব্যবহারকারী পাওয়া যায়নি!');
+                return;
+            }
+
+            if (user.isOwner) {
+                if (!code) {
+                    alert('মালিক হিসেবে প্রবেশের জন্য সিকিউরিটি পিন কোড দিন!');
+                    return;
+                }
+                if (user.code !== code) {
+                    alert('ভুল সিকিউরিটি কোড! সঠিক কোড দিয়ে আবার চেষ্টা করুন।');
+                    return;
+                }
+            }
+
             currentUser = user;
             localStorage.setItem('hanif_user', JSON.stringify(currentUser));
             render();
@@ -407,6 +454,7 @@
             const role = document.getElementById('regRole').value;
             if (!name || phone.length !== 11) { alert('সঠিক নাম ও ১১ ডিজিটের নম্বর দিন!'); return; }
             staffList.push({ id: Date.now(), name, role, phone, code: '', isOwner: false, status: 'Pending', attendance: 0, productionAvg: 0 });
+            staffList = ensureOwnersExist(staffList);
             safeSync('staffList', staffList, 'hanif_staff');
             alert('আবেদন পাঠানো হয়েছে!');
             setAuthTab('login');
@@ -415,6 +463,7 @@
         function approveStaff(id) {
             const sal = Number(document.getElementById(`sal_${id}`).value) || 0;
             staffList = staffList.map(s => s.id === id ? {...s, status: 'Active', salary: sal} : s);
+            staffList = ensureOwnersExist(staffList);
             safeSync('staffList', staffList, 'hanif_staff');
             alert('অনুমোদিত হয়েছে!');
             render();
