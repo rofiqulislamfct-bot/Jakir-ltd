@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>জাকির ইলেকট্রনিক্স - ERP & Challan Dashboard</title>
+    <title>হানিফ ডোর - ERP & Challan Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
@@ -19,25 +19,28 @@
 <body class="bg-gray-100 text-gray-800" id="body-theme">
 
     <!-- Top Navigation Bar -->
-    <header class="bg-indigo-700 text-white shadow-md">
+    <header class="bg-amber-700 text-white shadow-md transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
-                <img id="user-avatar-top" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white object-cover">
+                <img id="user-avatar-top" src="https://via.placeholder.com/40" alt="Profile" class="w-10 h-10 rounded-full border-2 border-white object-cover shadow">
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">জাকির ইলেকট্রনিক্স</h1>
-                    <p class="text-xs text-indigo-200" id="current-role-display">রোল: লোডিং...</p>
+                    <h1 class="font-bold text-lg leading-tight">🚪 হানিফ ডোর (Hanif Door)</h1>
+                    <p class="text-xs text-amber-200" id="current-role-display">রোল: মালিক (Owner)</p>
                 </div>
             </div>
             
-            <!-- Role Switcher for Testing -->
-            <div class="flex items-center space-x-2">
-                <select id="global-role-switcher" onchange="switchRole(this.value)" class="bg-indigo-800 text-white text-xs px-2 py-1 rounded border border-indigo-500">
+            <!-- Role Switcher & Theme Customizer -->
+            <div class="flex items-center space-x-3">
+                <select id="global-role-switcher" onchange="switchRole(this.value)" class="bg-amber-800 text-white text-xs px-3 py-1.5 rounded border border-amber-500 focus:outline-none">
                     <option value="owner">মালিক (Owner)</option>
                     <option value="manager">ম্যানেজার (Manager)</option>
                     <option value="staff">প্রধান কর্মচারী (Staff)</option>
                     <option value="driver">ড্রাইভার (Driver)</option>
                 </select>
-                <input type="color" id="theme-color-picker" onchange="changeThemeColor(this.value)" value="#4338ca" class="w-8 h-8 rounded cursor-pointer border-0">
+                <div class="flex items-center space-x-1 bg-amber-800 px-2 py-1 rounded border border-amber-500">
+                    <span class="text-xs text-amber-200">থিম:</span>
+                    <input type="color" id="theme-color-picker" onchange="changeThemeColor(this.value)" value="#b45309" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+                </div>
             </div>
         </div>
     </header>
@@ -47,72 +50,72 @@
 
         <!-- 1. Realtime Audio & Video Call Dashboard Widget -->
         <section class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 class="text-md font-bold mb-3 text-indigo-700 flex items-center gap-2">
+            <h2 class="text-md font-bold mb-3 text-amber-700 flex items-center gap-2">
                 📹 রিয়েলটাইম অডিও ও ভিডিও কল ড্যাশবোর্ড
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-gray-900 rounded-lg overflow-hidden relative h-40 flex items-center justify-center text-white">
-                    <div id="video-status" class="absolute top-2 left-2 bg-red-600 text-xs px-2 py-0.5 rounded">ক্যামেরা বন্ধ</div>
-                    <div class="text-center">
-                        <p class="text-sm text-gray-400">লাইভ প্রিভিউ উইন্ডো</p>
-                        <div class="mt-2 space-x-2">
-                            <button onclick="toggleVideo()" class="bg-indigo-600 text-xs px-3 py-1.5 rounded hover:bg-indigo-500">ভিডিও অন/অফ</button>
-                            <button onclick="toggleAudio()" class="bg-green-600 text-xs px-3 py-1.5 rounded hover:bg-green-500">মাইক মিউট</button>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-gray-900 rounded-lg overflow-hidden relative h-36 flex items-center justify-center text-white shadow-inner">
+                    <div id="video-status" class="absolute top-2 left-2 bg-red-600 text-xs px-2 py-0.5 rounded font-medium">ক্যামেরা বন্ধ</div>
+                    <div class="text-center p-2">
+                        <p class="text-xs text-gray-400">লাইভ প্রিভিউ উইন্ডো</p>
+                        <div class="mt-2 space-x-1">
+                            <button onclick="toggleVideo()" class="bg-amber-600 text-xs px-2.5 py-1 rounded hover:bg-amber-500">ভিডিও</button>
+                            <button onclick="toggleAudio()" class="bg-emerald-600 text-xs px-2.5 py-1 rounded hover:bg-emerald-500">মাইক</button>
                         </div>
                     </div>
                 </div>
-                <div class="md:col-span-2 flex flex-col justify-between bg-indigo-50 p-4 rounded-lg">
+                <div class="md:col-span-3 flex flex-col justify-between bg-amber-50 p-4 rounded-lg border border-amber-100">
                     <div>
-                        <h3 class="font-semibold text-sm text-indigo-900">সরাসরি ইন্টারকম ও কল স্ট্যাটাস</h3>
-                        <p class="text-xs text-gray-600 mt-1">দোকানের অন্য শাখা, ম্যানেজার বা ড্রাইভারের সাথে ইনস্ট্যান্ট কথা বলুন।</p>
+                        <h3 class="font-semibold text-sm text-amber-900">শোরুম ও স্টক ইন্টারকম কানেক্টিভিটি</h3>
+                        <p class="text-xs text-gray-600 mt-1">হানিফ ডোর শোরুম এবং ডেলিভারি পয়েন্টের মধ্যে ইনস্ট্যান্ট অডিও-ভিডিও যোগাযোগের হাব।</p>
                     </div>
-                    <div class="flex gap-2 mt-4">
-                        <button onclick="alert('অডিও কল কানেক্ট হচ্ছে...')" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded shadow hover:bg-indigo-700">📞 অডিও কল শুরু করুন</button>
-                        <button onclick="alert('ভিডিও কল রিং হচ্ছে...')" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded shadow hover:bg-emerald-700">🎥 ভিডিও কল শুরু করুন</button>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="alert('অডিও কল কানেক্ট হচ্ছে...')" class="bg-amber-700 text-white text-xs px-3.5 py-2 rounded shadow hover:bg-amber-800">📞 অডিও কল</button>
+                        <button onclick="alert('ভিডিও কল রিং হচ্ছে...')" class="bg-emerald-700 text-white text-xs px-3.5 py-2 rounded shadow hover:bg-emerald-800">🎥 ভিডিও কল</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- 2. Profile Setup Section -->
+        <!-- 2. Profile Setup Section with Picture -->
         <section class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 class="text-md font-bold mb-3 text-indigo-700">👤 প্রোফাইল ছবি ও তথ্য</h2>
+            <h2 class="text-md font-bold mb-3 text-amber-700">👤 প্রোফাইল ছবি ও ইউজার সেটিংস</h2>
             <div class="flex items-center space-x-4">
-                <img id="profile-preview" src="https://via.placeholder.com/80" class="w-16 h-16 rounded-full object-cover border" alt="Avatar">
+                <img id="profile-preview" src="https://via.placeholder.com/80" class="w-16 h-16 rounded-full object-cover border-2 border-amber-600 shadow" alt="Avatar">
                 <div>
-                    <input type="file" id="avatar-input" accept="image/*" onchange="updateProfileAvatar(event)" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                    <p class="text-xs text-gray-400 mt-1">আপনার প্রোফাইল ছবি আপলোড করুন।</p>
+                    <input type="file" id="avatar-input" accept="image/*" onchange="updateProfileAvatar(event)" class="text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 cursor-pointer">
+                    <p class="text-xs text-gray-400 mt-1">আপনার বা কর্মচারীর প্রোফাইল ছবি আপলোড করুন।</p>
                 </div>
             </div>
         </section>
 
-        <!-- 3. Role-Based Views -->
+        <!-- 3. ROLE-BASED SECTIONS -->
 
         <!-- OWNER & MANAGER VIEW: Challan Creation & Management -->
         <section id="owner-manager-section" class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-md font-bold text-indigo-700">📦 নতুন চালান তৈরি ও ম্যানেজমেন্ট (মালিক/ম্যানেজার)</h2>
-                <button onclick="printChallan()" class="bg-gray-800 text-white text-xs px-3 py-1.5 rounded hover:bg-gray-700">🖨️ কালার প্রিন্ট চালান</button>
+                <h2 class="text-md font-bold text-amber-700">📦 নতুন ডোর চালান তৈরি ও ম্যানেজমেন্ট (মালিক/ম্যানেজার)</h2>
+                <button onclick="printChallan()" class="bg-gray-800 text-white text-xs px-3 py-1.5 rounded hover:bg-gray-700 shadow">🖨️ কালার প্রিন্ট চালান</button>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                <input type="text" id="c-customer" placeholder="গ্রাহকের নাম" class="border p-2 text-xs rounded">
-                <input type="text" id="c-product" placeholder="প্রোডাক্টের নাম" class="border p-2 text-xs rounded">
-                <input type="number" id="c-price" placeholder="টাকার পরিমাণ (মূল্য)" class="border p-2 text-xs rounded">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4 bg-gray-50 p-3 rounded border">
+                <input type="text" id="c-customer" placeholder="গ্রাহকের নাম" class="border p-2 text-xs rounded focus:ring-1 focus:ring-amber-500">
+                <input type="text" id="c-product" placeholder="দরজার মডেল / বিবরণ" class="border p-2 text-xs rounded focus:ring-1 focus:ring-amber-500">
+                <input type="number" id="c-price" placeholder="টাকার হিসাব (মূল্য)" class="border p-2 text-xs rounded focus:ring-1 focus:ring-amber-500">
                 <input type="date" id="c-order-date" class="border p-2 text-xs rounded">
                 <input type="datetime-local" id="c-delivery-time" class="border p-2 text-xs rounded">
-                <button onclick="saveChallan()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded hover:bg-indigo-700">চালান সেভ ও সেন্ড করুন</button>
+                <button onclick="saveChallan()" class="md:col-span-3 lg:col-span-5 bg-amber-600 text-white text-xs py-2 rounded hover:bg-amber-700 font-semibold shadow">চালান সেভ ও অটো সেন্ড করুন</button>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-gray-100 border-b">
-                            <th class="p-2">তারিখ ও সময়</th>
-                            <th class="p-2">গ্রাহক</th>
-                            <th class="p-2">প্রোডাক্ট</th>
-                            <th class="p-2">টাকার হিসাব</th>
-                            <th class="p-2">স্ট্যাটাস</th>
+                        <tr class="bg-amber-50 text-amber-900 border-b">
+                            <th class="p-2.5">অর্ডার ও ডেলিভারি সময়</th>
+                            <th class="p-2.5">গ্রাহক</th>
+                            <th class="p-2.5">দরজার বিবরণ</th>
+                            <th class="p-2.5">টাকার হিসাব</th>
+                            <th class="p-2.5">স্ট্যাটাস</th>
                         </tr>
                     </thead>
                     <tbody id="full-challan-table">
@@ -124,20 +127,20 @@
 
         <!-- STAFF VIEW: Chief Employee (No Price, Only Product & Image + Order/Delivery Date) -->
         <section id="staff-section" class="bg-white rounded-xl shadow-md p-4 border border-gray-200 hidden">
-            <h2 class="text-md font-bold text-indigo-700 mb-3">📋 প্রধান কর্মচারীর ড্যাশবোর্ড (প্রোডাক্ট ও শিডিউল ভিউ)</h2>
-            <p class="text-xs text-gray-500 mb-3">⚠️ নোট: নিরাপত্তার স্বার্থে এখানে কোনো টাকার হিসাব দেখানো হয় না।</p>
+            <h2 class="text-md font-bold text-amber-700 mb-2">📋 প্রধান কর্মচারীর ড্যাশবোর্ড (প্রোডাক্ট ও শিডিউল ভিউ)</h2>
+            <p class="text-xs text-red-500 mb-3 bg-red-50 p-2 rounded border border-red-100">⚠️ গোপনীয়তা নোটিশ: প্রধান কর্মচারীর এই প্যানেলে কোনো আর্থিক হিসাব বা টাকার পরিমাণ দেখানো হয় না। শুধু ডোর প্রোডাক্ট, ছবি এবং শিডিউল থাকে।</p>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-gray-100 border-b">
-                            <th class="p-2">অর্ডার তারিখ</th>
-                            <th class="p-2">ডেলিভারি সময়</th>
-                            <th class="p-2">প্রোডাক্টের নাম</th>
-                            <th class="p-2">প্রোডাক্ট ছবি</th>
+                        <tr class="bg-amber-50 text-amber-900 border-b">
+                            <th class="p-2.5">অর্ডার তারিখ</th>
+                            <th class="p-2.5">ডেলিভারি সময়</th>
+                            <th class="p-2.5">দরজার বিবরণ</th>
+                            <th class="p-2.5">প্রোডাক্ট ছবি</th>
                         </tr>
                     </thead>
                     <tbody id="staff-challan-table">
-                        <!-- Staff view rows -->
+                        <!-- Staff rows -->
                     </tbody>
                 </table>
             </div>
@@ -145,19 +148,20 @@
 
         <!-- DRIVER VIEW: Delivery Challans -->
         <section id="driver-section" class="bg-white rounded-xl shadow-md p-4 border border-gray-200 hidden">
-            <h2 class="text-md font-bold text-indigo-700 mb-3">🚚 ড্রাইভার ডেলিভারি চালান অপশন</h2>
+            <h2 class="text-md font-bold text-amber-700 mb-3">🚚 ড্রাইভার ডেলিভারি চালান অপশন</h2>
+            <p class="text-xs text-gray-500 mb-3">ম্যানেজার বা মালিক কর্তৃক চালান সাবমিট হওয়ার সাথে সাথে এখানে ডেলিভারির শিডিউল চলে আসে।</p>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-gray-100 border-b">
-                            <th class="p-2">ডেলিভারি সময়</th>
-                            <th class="p-2">গ্রাহক</th>
-                            <th class="p-2">প্রোডাক্ট</th>
-                            <th class="p-2">অ্যাকশন</th>
+                        <tr class="bg-amber-50 text-amber-900 border-b">
+                            <th class="p-2.5">ডেলিভারি সময়</th>
+                            <th class="p-2.5">গ্রাহক</th>
+                            <th class="p-2.5">দরজার বিবরণ</th>
+                            <th class="p-2.5">অ্যাকশন</th>
                         </tr>
                     </thead>
                     <tbody id="driver-challan-table">
-                        <!-- Driver view rows -->
+                        <!-- Driver rows -->
                     </tbody>
                 </table>
             </div>
@@ -165,24 +169,24 @@
 
         <!-- 4. Advance Salary & Automatic Monthly Calculation Section -->
         <section class="bg-white rounded-xl shadow-md p-4 border border-gray-200">
-            <h2 class="text-md font-bold text-indigo-700 mb-3">💰 অগ্রিম বেতন আবেদন ও অটোমেটিক মাসিক হিসাব</h2>
+            <h2 class="text-md font-bold text-amber-700 mb-3">💰 অগ্রিম বেতন আবেদন ও অটোমেটিক মাসিক হিসাব</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-gray-50 p-3 rounded">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 bg-gray-50 p-3 rounded border">
                 <input type="text" id="emp-name" placeholder="কর্মচারীর নাম" class="border p-2 text-xs rounded">
                 <input type="number" id="emp-base-salary" placeholder="মূল মাসিক বেতন (টাকা)" class="border p-2 text-xs rounded">
                 <input type="number" id="emp-advance-req" placeholder="অগ্রিম বেতনের আবেদন (টাকা)" class="border p-2 text-xs rounded">
-                <button onclick="submitAdvanceSalary()" class="md:col-span-3 bg-indigo-600 text-white text-xs px-4 py-2 rounded hover:bg-indigo-700">অগ্রিম বেতনের জন্য আবেদন জমা দিন</button>
+                <button onclick="submitAdvanceSalary()" class="md:col-span-3 bg-amber-700 text-white text-xs py-2 rounded hover:bg-amber-800 font-semibold shadow">অগ্রিম বেতনের আবেদন জমা দিন ও অটো হিসাব করুন</button>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-gray-100 border-b">
-                            <th class="p-2">কর্মচারী</th>
-                            <th class="p-2">মূল বেতন</th>
-                            <th class="p-2">অগ্রিম কর্তন</th>
-                            <th class="p-2">নিট প্রদেয় বেতন (অটো)</th>
-                            <th class="p-2">স্ট্যাটাস</th>
+                        <tr class="bg-amber-50 text-amber-900 border-b">
+                            <th class="p-2.5">কর্মচারী</th>
+                            <th class="p-2.5">মূল বেতন</th>
+                            <th class="p-2.5">অগ্রিম কর্তন</th>
+                            <th class="p-2.5">নিট প্রদেয় বেতন (অটো ক্যালকুলেটেড)</th>
+                            <th class="p-2.5">স্ট্যাটাস</th>
                         </tr>
                     </thead>
                     <tbody id="salary-table">
@@ -194,11 +198,11 @@
 
     </main>
 
-    <!-- Hidden Print Template Area -->
+    <!-- Hidden Print Template Area for Color Print Challan -->
     <div class="print-area p-8 bg-white">
-        <h2 class="text-xl font-bold text-center">জাকির ইলেকট্রনিক্স</h2>
-        <p class="text-center text-xs mb-4">মহিপাল, ফেনী | হটলাইন: মোবাইল চালান সিস্টেম</p>
-        <hr class="mb-4">
+        <h2 class="text-2xl font-bold text-center text-amber-800">হানিফ ডোর (Hanif Door)</h2>
+        <p class="text-center text-xs mb-4 text-gray-600">আস্থা ও ঐতিহ্যের প্রতীক - প্রিমিয়াম কোয়ালিটি ডোর শোরুম</p>
+        <hr class="mb-4 border-amber-600">
         <div id="print-content-body" class="text-sm"></div>
     </div>
 
@@ -207,12 +211,12 @@
         // Global State Storage
         let appData = {
             role: 'owner',
-            themeColor: '#4338ca',
+            themeColor: '#b45309',
             challans: [
-                { id: 1, customer: 'রহিম উদ্দিন', product: 'ফ্রিজ ও গিজার', price: 35000, orderDate: '2026-11-05', deliveryTime: '2026-11-06 14:00', status: 'પેండిং' }
+                { id: 1, customer: 'রফিকুল ইসলাম', product: 'মেহগনি কাঠের ডিজাইন ডোর', price: 12500, orderDate: '2026-11-05', deliveryTime: '2026-11-06 15:30', status: 'অটো-সেন্ট' }
             ],
             salaries: [
-                { name: 'করিম মিয়া', base: 15000, advance: 3000, net: 12000, status: 'অনুমোদিত' }
+                { name: 'আব্দুল করিম', base: 18000, advance: 4000, net: 14000, status: 'ম্যানেজার অনুমোদিত' }
             ]
         };
 
@@ -231,7 +235,7 @@
             appData.role = role;
             document.getElementById('current-role-display').innerText = `রোল: ${getRoleName(role)}`;
             
-            // Toggle Section Visibility based on Role
+            // Toggle Section Visibility based on Role permissions
             document.getElementById('owner-manager-section').classList.toggle('hidden', role !== 'owner' && role !== 'manager');
             document.getElementById('staff-section').classList.toggle('hidden', role !== 'staff');
             document.getElementById('driver-section').classList.toggle('hidden', role !== 'driver');
@@ -240,7 +244,7 @@
         }
 
         function changeThemeColor(color) {
-            document.getElementById('body-theme').style.setProperty('--theme-color', color);
+            appData.themeColor = color;
             document.querySelector('header').style.backgroundColor = color;
         }
 
@@ -264,7 +268,7 @@
             const deliveryTime = document.getElementById('c-delivery-time').value;
 
             if(!customer || !product) {
-                alert('দয়া করে গ্রাহক ও প্রোডাক্টের নাম লিখুন!');
+                alert('দয়া করে গ্রাহকের নাম এবং দরজার বিবরণ লিখুন!');
                 return;
             }
 
@@ -273,13 +277,13 @@
                 customer, product, price, orderDate, deliveryTime, status: 'অটো-সেন্ট'
             });
 
-            // Reset inputs
+            // Reset Inputs
             document.getElementById('c-customer').value = '';
             document.getElementById('c-product').value = '';
             document.getElementById('c-price').value = '';
             
             renderTables();
-            alert('চালান সফলভাবে সেভ হয়েছে এবং সংশ্লিষ্ট কর্মচার ও ড্রাইভারের কাছে স্বয়ংক্রিয়ভাবে পৌঁছে গেছে!');
+            alert('চালান সফলভাবে সেভ হয়েছে! প্রধান কর্মচারীর নিকট প্রোডাক্ট/ছবি এবং ড্রাইভারের নিকট ডেলিভারি চালান অটোমেটিক পৌঁছে গেছে।');
         }
 
         function submitAdvanceSalary() {
@@ -288,14 +292,15 @@
             const advance = parseFloat(document.getElementById('emp-advance-req').value) || 0;
 
             if(!name || !base) {
-                alert('নাম এবং মূল বেতন পূরণ করুন!');
+                alert('কর্মচারীর নাম ও মূল বেতন পূরণ করুন!');
                 return;
             }
 
-            const net = base - advance; // Automatic monthly calculation
+            // Automatic monthly calculation (Base - Advance)
+            const net = base - advance;
 
             appData.salaries.push({
-                name, base, advance, net, status: 'আবেদিত'
+                name, base, advance, net, status: 'আবেদিত (অটো ক্যালকুলেটেড)'
             });
 
             document.getElementById('emp-name').value = '';
@@ -303,43 +308,44 @@
             document.getElementById('emp-advance-req').value = '';
 
             renderTables();
-            alert('অগ্রিম বেতনের আবেদন সফলভাবে জমা হয়েছে এবং মাসিক বেতন স্বয়ংক্রিয়ভাবে হিসাব করা হয়েছে।');
+            alert('অগ্রিম বেতনের আবেদন জমা হয়েছে এবং মাসিক নিট বেতন স্বয়ংক্রিয়ভাবে হিসাব করা হয়েছে।');
         }
 
         function renderTables() {
-            // 1. Owner/Manager Table
+            // 1. Owner & Manager Full Financial Table
             let fullHtml = '';
             appData.challans.forEach(c => {
-                fullHtml += `<tr class="border-b"><td class="p-2">${c.orderDate} / ${c.deliveryTime}</td><td class="p-2">${c.customer}</td><td class="p-2">${c.product}</td><td class="p-2 font-bold text-indigo-600">৳${c.price}</td><td class="p-2">${c.status}</td></tr>`;
+                fullHtml += `<tr class="border-b"><td class="p-2.5 font-medium">${c.orderDate || 'আজ'} / ${c.deliveryTime || 'নির্ধারিত'}</td><td class="p-2.5">${c.customer}</td><td class="p-2.5">${c.product}</td><td class="p-2.5 font-bold text-amber-700">৳${c.price}</td><td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px]">${c.status}</span></td></tr>`;
             });
             document.getElementById('full-challan-table').innerHTML = fullHtml || '<tr><td colspan="5" class="p-2 text-center text-gray-400">কোনো চালান নেই</td></tr>';
 
-            // 2. Staff Table (No Price, Only Product & Image)
+            // 2. Staff Table (No Price, Only Product & Image + Dates)
             let staffHtml = '';
             appData.challans.forEach(c => {
-                staffHtml += `<tr class="border-b"><td class="p-2">${c.orderDate}</td><td class="p-2">${c.deliveryTime}</td><td class="p-2 font-semibold">${c.product}</td><td class="p-2"><img src="https://via.placeholder.com/40" class="w-8 h-8 rounded object-cover" alt="Product"></td></tr>`;
+                staffHtml += `<tr class="border-b"><td class="p-2.5">${c.orderDate || 'আজ'}</td><td class="p-2.5 font-semibold text-red-600">${c.deliveryTime || 'নির্ধারিত'}</td><td class="p-2.5 font-bold">${c.product}</td><td class="p-2.5"><img src="https://images.unsplash.com/photo-1541123437800-1bb1317badc2?w=50&h=50&fit=crop" class="w-8 h-8 rounded object-cover border" alt="Door Image"></td></tr>`;
             });
             document.getElementById('staff-challan-table').innerHTML = staffHtml || '<tr><td colspan="4" class="p-2 text-center text-gray-400">কোনো চালান নেই</td></tr>';
 
-            // 3. Driver Table (Delivery Challan view)
+            // 3. Driver Delivery Table
             let driverHtml = '';
             appData.challans.forEach(c => {
-                driverHtml += `<tr class="border-b"><td class="p-2 font-bold text-red-600">${c.deliveryTime}</td><td class="p-2">${c.customer}</td><td class="p-2">${c.product}</td><td class="p-2"><button onclick="alert('ডেলিভারি সম্পন্ন হিসেবে মার্ক করা হয়েছে!')" class="bg-green-600 text-white px-2 py-1 rounded text-xs">ডেলিভারি কমপ্লিট</button></td></tr>`;
+                driverHtml += `<tr class="border-b"><td class="p-2.5 font-bold text-red-600">${c.deliveryTime || 'তাৎক্ষণিক'}</td><td class="p-2.5">${c.customer}</td><td class="p-2.5 font-medium">${c.product}</td><td class="p-2.5"><button onclick="alert('ডেলিভারি সম্পন্ন হিসেবে ড্রাইভার প্যানেলে আপডেট হয়েছে!')" class="bg-green-600 text-white px-2.5 py-1 rounded text-xs hover:bg-green-700 shadow">ডেলিভারি কমপ্লিট</button></td></tr>`;
             });
             document.getElementById('driver-challan-table').innerHTML = driverHtml || '<tr><td colspan="4" class="p-2 text-center text-gray-400">কোনো ডেলিভারি চালান নেই</td></tr>';
 
-            // 4. Salary Table
+            // 4. Salary Table with Auto Calculation
             let salaryHtml = '';
             appData.salaries.forEach(s => {
-                salaryHtml += `<tr class="border-b"><td class="p-2">${s.name}</td><td class="p-2">৳${s.base}</td><td class="p-2 text-red-500">৳${s.advance}</td><td class="p-2 font-bold text-green-600">৳${s.net}</td><td class="p-2">${s.status}</td></tr>`;
+                salaryHtml += `<tr class="border-b"><td class="p-2.5 font-medium">${s.name}</td><td class="p-2.5">৳${s.base}</td><td class="p-2.5 text-red-500 font-medium">৳${s.advance}</td><td class="p-2.5 font-bold text-emerald-600">৳${s.net}</td><td class="p-2.5"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px]">${s.status}</span></td></tr>`;
             });
             document.getElementById('salary-table').innerHTML = salaryHtml || '<tr><td colspan="5" class="p-2 text-center text-gray-400">কোনো তথ্য নেই</td></tr>';
         }
 
         function printChallan() {
-            let content = `<table width="100%" border="1" cellspacing="0" cellpadding="5"><tr><th>তারিখ</th><th>গ্রাহক</th><th>প্রোডাক্ট</th><th>মূল্য</th></tr>`;
+            let content = `<table width="100%" border="1" cellspacing="0" cellpadding="8" style="border-collapse: collapse; text-align: left; font-size: 12px;">
+                <tr style="background-color: #fef3c7;"><th>তারিখ ও সময়</th><th>গ্রাহকের নাম</th><th>দরজার বিবরণ ও মডেল</th><th>মূল্য (টাকা)</th></tr>`;
             appData.challans.forEach(c => {
-                content += `<tr><td>${c.orderDate}</td><td>${c.customer}</td><td>${c.product}</td><td>৳${c.price}</td></tr>`;
+                content += `<tr><td>${c.orderDate} / ${c.deliveryTime}</td><td>${c.customer}</td><td>${c.product}</td><td>৳${c.price}</td></tr>`;
             });
             content += `</table>`;
             document.getElementById('print-content-body').innerHTML = content;
@@ -349,12 +355,13 @@
         let isVideoOn = false;
         function toggleVideo() {
             isVideoOn = !isVideoOn;
-            document.getElementById('video-status').innerText = isVideoOn ? 'ক্যামেরা লাইভ চালু' : 'ক্যামেরা বন্ধ';
-            document.getElementById('video-status').className = isVideoOn ? 'absolute top-2 left-2 bg-green-600 text-xs px-2 py-0.5 rounded' : 'absolute top-2 left-2 bg-red-600 text-xs px-2 py-0.5 rounded';
+            const statusEl = document.getElementById('video-status');
+            statusEl.innerText = isVideoOn ? 'ক্যামেরা লাইভ চালু' : 'ক্যামেরা বন্ধ';
+            statusEl.className = isVideoOn ? 'absolute top-2 left-2 bg-green-600 text-xs px-2 py-0.5 rounded font-medium' : 'absolute top-2 left-2 bg-red-600 text-xs px-2 py-0.5 rounded font-medium';
         }
 
         function toggleAudio() {
-            alert('মাইক্রোফোন স্ট্যাটাস টগল করা হয়েছে।');
+            alert('মাইক্রোফোন স্ট্যাটাস মিউট/আনমিউট করা হয়েছে।');
         }
 
         window.onload = initApp;
